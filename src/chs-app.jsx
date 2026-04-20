@@ -2599,6 +2599,8 @@ export default function App() {
   // ── Auth state ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const userRef = useRef(null);
+  const profileRef = useRef(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signin");
 
@@ -2618,7 +2620,7 @@ export default function App() {
   // ── Fetch user profile ─────────────────────────────────────────────────────
   const fetchProfile = async (userId) => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    if (data) setProfile(data);
+    if (data) { setProfile(data); profileRef.current = data; }
   };
 
   // ── Fetch user workspaces ──────────────────────────────────────────────────
@@ -2633,11 +2635,11 @@ export default function App() {
   // ── Auth session listener ─────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) { setUser(session.user); fetchProfile(session.user.id); fetchWorkspaces(session.user.id); }
+      if (session?.user) { setUser(session.user); userRef.current = session.user; fetchProfile(session.user.id); fetchWorkspaces(session.user.id); }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
-      setUser(u);
+      setUser(u); userRef.current = u;
       if (u) { fetchProfile(u.id); fetchWorkspaces(u.id); }
       else { setProfile(null); setWorkspaces([]); setCurrentWorkspace(null); }
     });
@@ -2668,10 +2670,11 @@ export default function App() {
 
   // ── Save chassis to history ────────────────────────────────────────────────
   const saveChassis = async (parsed, tier, input, bpSelections, currentLang) => {
-    if (!user) return;
+    const u = userRef.current;
+    if (!u) return;
     const cost = (TIER_TOKEN_COST[tier.id] || 1) + (bpSelections.length * BP_TOKEN_COST);
     await supabase.from("chassis_history").insert({
-      user_id: user.id,
+      user_id: u.id,
       workspace_id: currentWorkspace?.id || null,
       business_name: parsed.business?.name || input,
       business_input: input,
@@ -2685,18 +2688,18 @@ export default function App() {
 
   // ── Deduct tokens (personal or workspace) ─────────────────────────────────
   const deductTokens = async (tier, bpSelections, parsed, input, currentLang) => {
-    if (!user) return;
+    const u = userRef.current;
+    const p = profileRef.current;
+    if (!u) return;
     const cost = (TIER_TOKEN_COST[tier.id] || 1) + (bpSelections.length * BP_TOKEN_COST);
     if (currentWorkspace) {
       const newBal = Math.max(0, (currentWorkspace.token_balance || 0) - cost);
       const { data } = await supabase.from("workspaces").update({ token_balance: newBal }).eq("id", currentWorkspace.id).select().single();
       if (data) setCurrentWorkspace(prev => ({ ...prev, token_balance: newBal }));
-      await supabase.from("token_transactions").insert({ user_id: user.id, workspace_id: currentWorkspace.id, type: "consumption", amount: -cost, description: `${tier.label} Chassis — ${currentWorkspace.name}` });
-    } else if (profile) {
-      const newBal = Math.max(0, (profile.token_balance || 0) - cost);
-      const { data } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", user.id).select().single();
-      if (data) setProfile(data);
-      await supabase.from("token_transactions").insert({ user_id: user.id, type: "consumption", amount: -cost, description: `${tier.label} Chassis generation${bpSelections.length ? ` + Beyond Profit (${bpSelections.join(", ")})` : ""}` });
+    } else if (p) {
+      const newBal = Math.max(0, (p.token_balance || 0) - cost);
+      const { data } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", u.id).select().single();
+      if (data) { setProfile(data); profileRef.current = data; }
     }
     await saveChassis(parsed, tier, input, bpSelections, currentLang);
   };
