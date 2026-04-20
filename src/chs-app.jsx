@@ -2704,9 +2704,9 @@ export default function App() {
   // ── Core generation logic ─────────────────────────────────────────────────
   const runGeneration = async (input, tier, currentLang, bpSelections) => {
     try {
-      const res = await fetch("/api/anthropic", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: tier.tokens,
