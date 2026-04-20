@@ -2259,7 +2259,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
       setBpLoading(true);
       setBpError(null);
       try {
-        const res = await fetch("/anthropic/v1/messages", {
+        const res = await fetch("/api/anthropic", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2704,7 +2704,7 @@ export default function App() {
   // ── Core generation logic ─────────────────────────────────────────────────
   const runGeneration = async (input, tier, currentLang, bpSelections) => {
     try {
-      const res = await fetch("/anthropic/v1/messages", {
+      const res = await fetch("/api/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

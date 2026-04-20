@@ -9,10 +9,10 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '/anthropic': {
+        '/api/anthropic': {
           target: 'https://api.anthropic.com',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/anthropic/, ''),
+          rewrite: (path) => path.replace(/^\/api\/anthropic/, '/v1/messages'),
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               proxyReq.setHeader('x-api-key', apiKey)
