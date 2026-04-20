@@ -2793,7 +2793,7 @@ export default function App() {
         onOpenChassis={(ch) => {
           if (ch.chassis_data) {
             setChassisData(ch.chassis_data);
-            setSelectedTier(TIER_CONFIG.find(t => t.id === ch.tier) || TIER_CONFIG[0]);
+            setSelectedTier(getTiers(lang).find(t => t.id === ch.tier) || getTiers(lang)[0]);
             setBeyondProfitSelections(ch.beyond_profit_selections || []);
             setUserInput(ch.business_input || "");
             setScreen("page2");
