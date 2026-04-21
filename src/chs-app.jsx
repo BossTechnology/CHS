@@ -215,7 +215,7 @@ const T = {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
     bossLink: "a Boss.Technology",
     pageTitle: "Build a Chassis.",
-    inputInstruction: "ENTER A BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBINATION — SEPARATED BY COMMAS.",
+    inputInstruction: "BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBINATION — SEPARATED BY COMMAS.",
     deployHint: "⌘ + ENTER TO DEPLOY · OPENS IN NEW TAB",
     startBtn: "START FABRICATING",
     whatIsChs: "WHAT IS CHASS1S?",
@@ -1642,7 +1642,7 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <CHSLogo height={isMobile ? 32 : 42} />
           <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 13, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y FRAMEWORK</span>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y FRAMEWORK</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
           </div>
         </div>
