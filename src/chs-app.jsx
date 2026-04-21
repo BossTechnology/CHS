@@ -218,8 +218,8 @@ const T = {
     inputInstruction: "ENTER A BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBINATION — SEPARATED BY COMMAS.",
     deployHint: "⌘ + ENTER TO DEPLOY · OPENS IN NEW TAB",
     startBtn: "START FABRICATING",
-    whatIsChs: "WHAT IS CHS?",
-    chsDescription: "CHS (CHASSIS) is the world's first and only Business Observability Framework — with the power to Architect, Build, and Tune any new or existing business, from an ice cream shop to an airline. For the first time, technology and business are unified into a single powerful vehicle — where every decision, every change, and every insight cascades with full awareness of the whole. Through Business Observability, powered by Applied AI, CHS turns the complexity of running a business into something observable, measurable, and actionable. It is not a platform. It is not a tool. It is the Framework upon which true Business Observability is built.",
+    whatIsChs: "WHAT IS CHASS1S?",
+    chsDescription: "CHASS1S is the world's first and only Business Observability Framework — with the power to Architect, Build, and Tune any new or existing business, from an ice cream shop to an airline. For the first time, technology and business are unified into a single powerful vehicle — where every decision, every change, and every insight cascades with full awareness of the whole. Through Business Observability, powered by Applied AI, CHASS1S turns the complexity of running a business into something observable, measurable, and actionable. It is not a platform. It is not a tool. It is the Framework upon which true Business Observability is built.",
     chsCreditBoss: { prefix: "Chassis is brought to you by ", name: "Boss.Technology", suffix: " — a Latin American high-end Business Observability Builder, Tuner, and Brand." },
     chsCreditFederico: { prefix: "Created by ", name: "Federico Lara", suffix: " — Business Observability thought leader, author of Six Steps to Achieve Business Observability, creator of Metric Monetization, and former executive at New Relic and Dynatrace." },
     selectDepth: "SELECT CHASSIS DEPTH",
@@ -262,8 +262,8 @@ const T = {
     inputInstruction: "INGRESE UN TIPO DE NEGOCIO, NOMBRE, UBICACIÓN, SITIO WEB,\nO CUALQUIER COMBINACIÓN — SEPARADOS POR COMAS.",
     deployHint: "⌘ + ENTER PARA DESPLEGAR · SE ABRE EN NUEVA PESTAÑA",
     startBtn: "INICIAR FABRICACIÓN",
-    whatIsChs: "¿QUÉ ES CHS?",
-    chsDescription: "CHS (CHASSIS) es el primer y único Business Observability Framework del mundo — con el poder de Arquitectar, Construir y Afinar cualquier negocio nuevo o existente, desde una heladería hasta una aerolínea. Por primera vez, la tecnología y el negocio se unifican en un solo vehículo poderoso — donde cada decisión, cada cambio y cada insight resuena con plena consciencia del conjunto. A través de Business Observability, impulsada por Applied AI, CHS convierte la complejidad de dirigir un negocio en algo observable, medible y accionable. No es una plataforma. No es una herramienta. Es el Framework sobre el cual se construye la verdadera Business Observability.",
+    whatIsChs: "¿QUÉ ES CHASS1S?",
+    chsDescription: "CHASS1S es el primer y único Business Observability Framework del mundo — con el poder de Arquitectar, Construir y Afinar cualquier negocio nuevo o existente, desde una heladería hasta una aerolínea. Por primera vez, la tecnología y el negocio se unifican en un solo vehículo poderoso — donde cada decisión, cada cambio y cada insight resuena con plena consciencia del conjunto. A través de Business Observability, impulsada por Applied AI, CHASS1S convierte la complejidad de dirigir un negocio en algo observable, medible y accionable. No es una plataforma. No es una herramienta. Es el Framework sobre el cual se construye la verdadera Business Observability.",
     chsCreditBoss: { prefix: "Chassis es traído a ti por ", name: "Boss.Technology", suffix: " — un Business Observability Builder, Tuner y Brand latinoamericano de alta gama." },
     chsCreditFederico: { prefix: "Creado por ", name: "Federico Lara", suffix: " — líder de pensamiento en Business Observability, autor de Six Steps to Achieve Business Observability, creador de Metric Monetization, y ex ejecutivo en New Relic y Dynatrace." },
     selectDepth: "SELECCIONAR PROFUNDIDAD DEL CHASSIS",
@@ -306,8 +306,8 @@ const T = {
     inputInstruction: "SAISISSEZ UN TYPE D'ENTREPRISE, NOM, LIEU, SITE WEB,\nOU TOUTE COMBINAISON — SÉPARÉS PAR DES VIRGULES.",
     deployHint: "⌘ + ENTRÉE POUR DÉPLOYER · OUVRE DANS UN NOUVEL ONGLET",
     startBtn: "COMMENCER LA FABRICATION",
-    whatIsChs: "QU'EST-CE QUE CHS?",
-    chsDescription: "CHS (CHASSIS) est le premier et unique Business Observability Framework au monde — avec le pouvoir d'Architecturer, Construire et Ajuster toute entreprise nouvelle ou existante, d'un glacier à une compagnie aérienne. Pour la première fois, la technologie et l'entreprise sont unifiées en un seul véhicule puissant — où chaque décision, chaque changement et chaque insight se répercute avec une pleine conscience de l'ensemble. À travers Business Observability, propulsée par Applied AI, CHS transforme la complexité de gérer une entreprise en quelque chose d'observable, mesurable et actionnable. Ce n'est pas une plateforme. Ce n'est pas un outil. C'est le Framework sur lequel repose le véritable Business Observability.",
+    whatIsChs: "QU'EST-CE QUE CHASS1S?",
+    chsDescription: "CHASS1S est le premier et unique Business Observability Framework au monde — avec le pouvoir d'Architecturer, Construire et Ajuster toute entreprise nouvelle ou existante, d'un glacier à une compagnie aérienne. Pour la première fois, la technologie et l'entreprise sont unifiées en un seul véhicule puissant — où chaque décision, chaque changement et chaque insight se répercute avec une pleine conscience de l'ensemble. À travers Business Observability, propulsée par Applied AI, CHASS1S transforme la complexité de gérer une entreprise en quelque chose d'observable, mesurable et actionnable. Ce n'est pas une plateforme. Ce n'est pas un outil. C'est le Framework sur lequel repose le véritable Business Observability.",
     chsCreditBoss: { prefix: "Chassis vous est proposé par ", name: "Boss.Technology", suffix: " — un Business Observability Builder, Tuner et Brand latino-américain haut de gamme." },
     chsCreditFederico: { prefix: "Créé par ", name: "Federico Lara", suffix: " — leader d'opinion en Business Observability, auteur de Six Steps to Achieve Business Observability, créateur de Metric Monetization, et ancien dirigeant chez New Relic et Dynatrace." },
     selectDepth: "SÉLECTIONNER LA PROFONDEUR DU CHASSIS",
@@ -350,8 +350,8 @@ const T = {
     inputInstruction: "INSIRA UM TIPO DE NEGÓCIO, NOME DE EMPRESA, LOCALIZAÇÃO, SITE,\nOU QUALQUER COMBINAÇÃO — SEPARADOS POR VÍRGULAS.",
     deployHint: "⌘ + ENTER PARA IMPLANTAR · ABRE EM NOVA ABA",
     startBtn: "INICIAR FABRICAÇÃO",
-    whatIsChs: "O QUE É CHS?",
-    chsDescription: "CHS (CHASSIS) é o primeiro e único Business Observability Framework do mundo — com o poder de Arquitetar, Construir e Afinar qualquer negócio novo ou existente, de uma sorveteria a uma companhia aérea. Pela primeira vez, tecnologia e negócio são unificados em um único veículo poderoso — onde cada decisão, cada mudança e cada insight reverbera com plena consciência do todo. Através de Business Observability, impulsionado por Applied AI, CHS transforma a complexidade de gerir um negócio em algo observável, mensurável e acionável. Não é uma plataforma. Não é uma ferramenta. É o Framework sobre o qual se constrói o verdadeiro Business Observability.",
+    whatIsChs: "O QUE É CHASS1S?",
+    chsDescription: "CHASS1S é o primeiro e único Business Observability Framework do mundo — com o poder de Arquitetar, Construir e Afinar qualquer negócio novo ou existente, de uma sorveteria a uma companhia aérea. Pela primeira vez, tecnologia e negócio são unificados em um único veículo poderoso — onde cada decisão, cada mudança e cada insight reverbera com plena consciência do todo. Através de Business Observability, impulsionado por Applied AI, CHASS1S transforma a complexidade de gerir um negócio em algo observável, mensurável e acionável. Não é uma plataforma. Não é uma ferramenta. É o Framework sobre o qual se constrói o verdadeiro Business Observability.",
     chsCreditBoss: { prefix: "Chassis é trazido a você pela ", name: "Boss.Technology", suffix: " — uma Business Observability Builder, Tuner e Brand latino-americana de alto padrão." },
     chsCreditFederico: { prefix: "Criado por ", name: "Federico Lara", suffix: " — líder de pensamento em Business Observability, autor de Six Steps to Achieve Business Observability, criador de Metric Monetization, e ex-executivo na New Relic e Dynatrace." },
     selectDepth: "SELECIONAR PROFUNDIDADE DO CHASSIS",
@@ -405,7 +405,7 @@ function getTiers(lang) {
 function buildPrompt(userInput, tier, lang) {
   const langName = LANGUAGES.find(l => l.code === lang)?.label || "English";
   const langInstruction = lang === "PT" ? "Brazilian Portuguese (Português do Brasil) — use Brazilian spelling and vocabulary, not European Portuguese" : langName;
-  return `You are a business observability expert building a CHS Chassis analysis. The user has provided: "${userInput}"
+  return `You are a business observability expert building a CHASS1S Chassis analysis. The user has provided: "${userInput}"
 
 CRITICAL: Generate ALL text content in ${langInstruction}. Every description, value point, KBR title, and narrative must be written natively in ${langInstruction}.
 
@@ -661,9 +661,9 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin" }) {
 
         {/* Header */}
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.2em", marginBottom: 6 }}>CHS · BUSINESS OBSERVABILITY FRAMEWORK</div>
+          letterSpacing: "0.2em", marginBottom: 6 }}>CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
         <h2 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 24px", fontFamily: "'Georgia', serif", color: "#000" }}>
-          {mode === "signin" ? "Sign In to CHS" : "Create Your Account"}
+          {mode === "signin" ? "Sign In to CHASS1S" : "Create Your Account"}
         </h2>
 
         {/* ── Social Login Buttons ── */}
@@ -826,7 +826,7 @@ function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
             style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none",
               cursor: "pointer", color: "#666", fontSize: 18, lineHeight: 1 }}>✕</button>
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#555",
-            letterSpacing: "0.2em", marginBottom: 8 }}>CHS · TOKEN PURCHASE</div>
+            letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · TOKEN PURCHASE</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Georgia', serif",
             marginBottom: 6 }}>Buy Tokens</div>
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555" }}>
@@ -1010,7 +1010,7 @@ function WorkspaceCreateModal({ user, onClose, onCreated }) {
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14,
           background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#aaa" }}>✕</button>
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.2em", marginBottom: 8 }}>CHS · WORKSPACE</div>
+          letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · WORKSPACE</div>
         <h2 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 8px", fontFamily: "'Georgia', serif" }}>
           Create Workspace
         </h2>
@@ -1080,7 +1080,7 @@ function ChassisHistoryModal({ user, onClose, onOpenChassis }) {
           <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14,
             background: "none", border: "none", cursor: "pointer", color: "#555", fontSize: 18 }}>✕</button>
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#555",
-            letterSpacing: "0.2em", marginBottom: 6 }}>CHS · CHASSIS HISTORY</div>
+            letterSpacing: "0.2em", marginBottom: 6 }}>CHASS1S · CHASSIS HISTORY</div>
           <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Georgia', serif" }}>My Chassis</div>
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555", marginTop: 4 }}>
             {history.length > 0 ? `${history.length} Chassis generated` : ""}
@@ -1177,7 +1177,7 @@ function WorkspaceMembersModal({ workspace, user, userRole, onClose }) {
     if (!inviteEmail.trim()) return;
     setLoading(true); setError(""); setSuccess("");
     const { data: p } = await supabase.from("profiles").select("id,email").eq("email", inviteEmail.trim().toLowerCase()).single();
-    if (!p?.id) { setError("No CHS account found with that email. Ask them to sign up first."); setLoading(false); return; }
+    if (!p?.id) { setError("No CHASS1S account found with that email. Ask them to sign up first."); setLoading(false); return; }
     const { data: existing } = await supabase.from("workspace_members").select("id").eq("workspace_id", workspace.id).eq("user_id", p.id).single();
     if (existing?.id) { setError("That user is already a member of this workspace."); setLoading(false); return; }
     const { error: err } = await supabase.from("workspace_members").insert({ workspace_id: workspace.id, user_id: p.id, role: inviteRole, invited_by: user.id });
@@ -1606,7 +1606,7 @@ function CHSLogo({ height = 42 }) {
   return (
     <img
       src={CHS_LOGO_SRC}
-      alt="CHS"
+      alt="CHASS1S"
       style={{ height: height, width: "auto", display: "block", imageRendering: "auto" }}
     />
   );
@@ -1703,7 +1703,7 @@ function AppFooter({ t }) {
   return (
     <div style={{ borderTop: "3px solid #000", background: "#000", padding: isMobile ? "14px 16px" : "18px 40px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>CHS · BUSINESS OBSERVABILITY FRAMEWORK</div>
+        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
         <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#fff", letterSpacing: "0.1em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
       </div>
     </div>
@@ -2003,7 +2003,7 @@ function LoadingScreen({ input, tierLabel, t }) {
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 20px" }}>
       <div style={{ textAlign: "center", maxWidth: 480 }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555", letterSpacing: "0.2em", marginBottom: 8 }}>CHS · {t.tagline}</div>
+        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555", letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · {t.tagline}</div>
         {tierLabel && <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#444", letterSpacing: "0.15em", marginBottom: 32 }}>{tierLabel.toUpperCase()} CHASSIS</div>}
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 13, color: "#888", marginBottom: 8, letterSpacing: "0.06em" }}>{t.loadingTitle}</div>
         <div style={{ fontFamily: "'Georgia', serif", fontSize: 18, color: "#fff", marginBottom: 48, lineHeight: 1.5, fontStyle: "italic" }}>"{input}"</div>
@@ -2358,7 +2358,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
     const valueHTML = (business.chassisValue||[]).map(v => `
       <div style="display:flex;gap:8px;margin-bottom:5px;font-size:11px"><span style="font-weight:900">→</span><span>${v}</span></div>`).join('');
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>CHS — ${business.name}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>CHASS1S — ${business.name}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: Georgia, serif; margin: 0; padding: 30px 36px; color: #000; background: #fff; font-size: 12px; }
@@ -2373,7 +2373,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
 
 <div style="border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end">
   <div>
-    <div style="font-family:monospace;font-size:9px;color:#888;letter-spacing:0.15em;margin-bottom:5px">CHS · BUSINESS OBSERVABILITY FRAMEWORK</div>
+    <div style="font-family:monospace;font-size:9px;color:#888;letter-spacing:0.15em;margin-bottom:5px">CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
     <div style="font-size:22px;font-weight:900;letter-spacing:-0.02em;margin-bottom:3px">${business.name}</div>
     <div style="font-family:monospace;font-size:9px;color:#888;letter-spacing:0.06em">${metaLine}</div>
   </div>
@@ -2416,7 +2416,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
 </div>
 
 <div style="border-top:2px solid #000;padding-top:10px;margin-top:28px;display:flex;justify-content:space-between;font-family:monospace;font-size:8px;color:#888">
-  <span>CHS · BUSINESS OBSERVABILITY FRAMEWORK</span>
+  <span>CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</span>
   <span>boss.technology</span>
 </div>
 
@@ -2451,7 +2451,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
         // Fallback: create a temporary anchor and click it
         const a = document.createElement("a");
         a.href = dataUri;
-        a.download = `CHS-${business.name.replace(/\s+/g, "-")}.html`;
+        a.download = `CHASS1S-${business.name.replace(/\s+/g, "-")}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2816,7 +2816,7 @@ export default function App() {
         <AppHeader lang={lang} setLang={setLang} {...authProps} />
         <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:48 }}>
           <div style={{ textAlign:"center", maxWidth:480 }}>
-            <div style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:"#888", letterSpacing:"0.2em", marginBottom:24 }}>CHS · {t.tagline}</div>
+            <div style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:"#888", letterSpacing:"0.2em", marginBottom:24 }}>CHASS1S · {t.tagline}</div>
             <h2 style={{ fontSize:28, fontWeight:900, color:"#000", margin:"0 0 16px" }}>{t.errorTitle}</h2>
             <p style={{ fontSize:14, color:"#555", lineHeight:1.7, margin:"0 0 32px" }}>{errorMsg}</p>
             <button onClick={resetToPage1} style={{ padding:"12px 32px", background:"#000", color:"#fff", border:"none", fontFamily:"'Courier New',monospace", fontSize:12, fontWeight:900, letterSpacing:"0.15em", cursor:"pointer" }}>{t.tryAgain}</button>
