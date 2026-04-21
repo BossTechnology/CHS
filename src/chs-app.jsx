@@ -1642,7 +1642,7 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <CHSLogo height={isMobile ? 32 : 42} />
           <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y Framework</span>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y FRAMEWORK</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
           </div>
         </div>
@@ -1866,20 +1866,10 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
               /* ── Mobile slider ── */
               (() => {
                 const sliderIdx = tiers.findIndex(t => t.id === selectedTierId);
-                const goPrev = () => { const i = (sliderIdx - 1 + tiers.length) % tiers.length; setSelectedTierId(tiers[i].id); };
-                const goNext = () => { const i = (sliderIdx + 1) % tiers.length; setSelectedTierId(tiers[i].id); };
                 const tier = tiers[sliderIdx];
-                const arrowBtn = (onClick, dir) => (
-                  <button onClick={onClick} style={{ background: "none", border: "1px solid #d0d0d0", borderRadius: 2, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      {dir === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
-                    </svg>
-                  </button>
-                );
                 return (
-                  <div style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
-                    {arrowBtn(goPrev, "left")}
-                    <button onClick={() => {}} style={{ flex: 1, padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, cursor: "default", textAlign: "left" }}>
+                  <div style={{ width: "100%" }}>
+                    <div style={{ padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                         <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{tier.label.toUpperCase()}</div>
                         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
@@ -1895,8 +1885,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
                             style={{ width: i === sliderIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === sliderIdx ? "#fff" : "#555", border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s" }} />
                         ))}
                       </div>
-                    </button>
-                    {arrowBtn(goNext, "right")}
+                    </div>
                   </div>
                 );
               })()
