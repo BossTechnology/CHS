@@ -1617,11 +1617,11 @@ function CHSLogo({ height = 42 }) {
       boxSizing: "border-box",
     }}>
       <span style={{
-        fontFamily: "'Arial Black', 'Arial Bold', sans-serif",
+        fontFamily: "'Exo 2', 'Arial Black', sans-serif",
         fontWeight: 900,
         fontSize: fontSize,
         color: "#fff",
-        letterSpacing: "0.05em",
+        letterSpacing: "0.04em",
         lineHeight: 1,
         whiteSpace: "nowrap",
       }}>CHASS1S</span>
