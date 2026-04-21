@@ -1835,14 +1835,14 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
     <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#fff", display: "flex", flexDirection: "column" }}>
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
         workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} />
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px 20px" : isTablet ? "48px 32px" : "60px 48px" }}>
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "24px 20px" : isTablet ? "48px 32px" : "60px 48px" }}>
         <div style={{ width: "100%", maxWidth: 800, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 16 : 48 }}>
-            <h1 style={{ fontSize: isMobile ? 26 : isTablet ? 40 : 48, fontWeight: 900, letterSpacing: "-0.03em", color: "#000", margin: 0, lineHeight: 1.05 }}>{t.pageTitle}</h1>
+          <div style={{ textAlign: "center", marginBottom: isMobile ? 24 : 48 }}>
+            <h1 style={{ fontSize: isMobile ? 30 : isTablet ? 40 : 48, fontWeight: 900, letterSpacing: "-0.03em", color: "#000", margin: 0, lineHeight: 1.05 }}>{t.pageTitle}</h1>
           </div>
 
           {/* Tier Cards */}
-          <div style={{ width: "100%", marginBottom: isMobile ? 12 : 24 }}>
+          <div style={{ width: "100%", marginBottom: isMobile ? 18 : 24 }}>
             {isMobile ? (
               /* ── Mobile slider ── */
               (() => {
@@ -1862,7 +1862,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
                   <div style={{ width: "100%" }}
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}>
-                    <div style={{ padding: "10px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left", height: 130, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                    <div style={{ padding: "12px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left", height: 145, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                         <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{tier.label.toUpperCase()}</div>
                         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
@@ -1903,23 +1903,23 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
           </div>
 
           {/* Input Instruction */}
-          <div style={{ width: "100%", textAlign: "center", marginBottom: isMobile ? 8 : 14 }}>
+          <div style={{ width: "100%", textAlign: "center", marginBottom: isMobile ? 12 : 14 }}>
             <p style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 10 : 12, color: "#888", letterSpacing: "0.06em", margin: 0, lineHeight: 1.8, whiteSpace: isMobile ? "normal" : "pre-line" }}>{t.inputInstruction}</p>
           </div>
 
           {/* Textarea */}
-          <div style={{ width: "100%", marginBottom: isMobile ? 10 : 16 }}>
+          <div style={{ width: "100%", marginBottom: isMobile ? 14 : 16 }}>
             <div style={{ position: "relative", border: focused ? "2px solid #000" : "2px solid #d0d0d0", borderRadius: 2, transition: "border-color 0.2s" }}>
               {!input && !focused && (
-                <div style={{ position: "absolute", top: isMobile ? 12 : 20, left: 20, fontFamily: "'Courier New', monospace", fontSize: 14, color: "#bbb", pointerEvents: "none", zIndex: 1 }}>
+                <div style={{ position: "absolute", top: isMobile ? 14 : 20, left: 20, fontFamily: "'Courier New', monospace", fontSize: 14, color: "#bbb", pointerEvents: "none", zIndex: 1 }}>
                   {typedExample}{isTyping && <span style={{ borderRight: "2px solid #bbb", marginLeft: 1 }}>&nbsp;</span>}
                 </div>
               )}
               <textarea value={input} onChange={e => setInput(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
                 onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); handleFabricateClick(); } }}
-                rows={isMobile ? 2 : 4} style={{ width: "100%", padding: isMobile ? "12px 16px" : "18px 20px", fontFamily: "'Georgia', serif", fontSize: 15, color: "#000", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7, boxSizing: "border-box", position: "relative", zIndex: 2 }} />
+                rows={isMobile ? 3 : 4} style={{ width: "100%", padding: isMobile ? "14px 16px" : "18px 20px", fontFamily: "'Georgia', serif", fontSize: 15, color: "#000", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7, boxSizing: "border-box", position: "relative", zIndex: 2 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: isMobile ? 4 : 8 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: isMobile ? 6 : 8 }}>
               <span style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#aaa", letterSpacing: "0.08em" }}>{t.deployHint}</span>
             </div>
           </div>
