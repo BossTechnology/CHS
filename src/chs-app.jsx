@@ -215,7 +215,7 @@ const T = {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
     bossLink: "a Boss.Technology",
     pageTitle: "Build a Chassis.",
-    inputInstruction: "BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBINATION — SEPARATED BY COMMAS.",
+    inputInstruction: "BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBO — SEPARATED BY COMMAS.",
     deployHint: "⌘ + ENTER TO DEPLOY · OPENS IN NEW TAB",
     startBtn: "START FABRICATING",
     whatIsChs: "WHAT IS CHASS1S?",
