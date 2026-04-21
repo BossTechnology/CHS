@@ -1638,15 +1638,15 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
 
   return (
     <div style={{ borderBottom: "1px solid #e0e0e0", background: "#fff", padding: isMobile ? "0 16px" : "0 40px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", flexWrap: "wrap", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", flexWrap: "nowrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <CHSLogo height={isMobile ? 32 : 42} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700 }}>BUSINESS OBSERVABILITY FRAMEWORK</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16, flexShrink: 0 }}>
           {children}
           {/* ── Profile / Guest Button ── */}
           <div ref={authRef} style={{ position: "relative" }}>
