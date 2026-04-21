@@ -1756,7 +1756,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
         </div>
 
         {/* Checkboxes row */}
-        <div style={{ display: "flex", gap: isMobile ? 12 : 20, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: isMobile ? 10 : 20, flexWrap: "nowrap", alignItems: "center" }}>
           {Object.keys(t.bpOptions).map(opt => {
             const isChecked = beyondProfitSelections.includes(opt);
             return (
