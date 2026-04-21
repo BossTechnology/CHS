@@ -1867,9 +1867,21 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
               (() => {
                 const sliderIdx = tiers.findIndex(t => t.id === selectedTierId);
                 const tier = tiers[sliderIdx];
+                const touchStartX = useRef(null);
+                const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+                const handleTouchEnd = (e) => {
+                  if (touchStartX.current === null) return;
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  touchStartX.current = null;
+                  if (Math.abs(dx) < 40) return;
+                  if (dx < 0) setSelectedTierId(tiers[(sliderIdx + 1) % tiers.length].id);
+                  else setSelectedTierId(tiers[(sliderIdx - 1 + tiers.length) % tiers.length].id);
+                };
                 return (
-                  <div style={{ width: "100%" }}>
-                    <div style={{ padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left" }}>
+                  <div style={{ width: "100%" }}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}>
+                    <div style={{ padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left", height: 160, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                         <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{tier.label.toUpperCase()}</div>
                         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
@@ -1877,9 +1889,9 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
                       <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: "0.06em", marginBottom: 8 }}>
                         {TIER_TOKEN_COST[tier.id]} {TIER_TOKEN_COST[tier.id] === 1 ? "token" : "tokens"}
                       </div>
-                      <div style={{ fontSize: 11, lineHeight: 1.6, color: "#ccc", fontFamily: "'Georgia', serif" }}>{tier.description}</div>
+                      <div style={{ fontSize: 11, lineHeight: 1.6, color: "#ccc", fontFamily: "'Georgia', serif", flex: 1, overflow: "hidden" }}>{tier.description}</div>
                       {/* Dot indicators */}
-                      <div style={{ display: "flex", gap: 5, marginTop: 12 }}>
+                      <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
                         {tiers.map((_, i) => (
                           <button key={i} onClick={() => setSelectedTierId(tiers[i].id)}
                             style={{ width: i === sliderIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === sliderIdx ? "#fff" : "#555", border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s" }} />
