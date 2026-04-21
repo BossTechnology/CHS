@@ -1642,7 +1642,7 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <CHSLogo height={isMobile ? 32 : 42} />
           <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y</span>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 8 : 9, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y Framework</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
           </div>
         </div>
