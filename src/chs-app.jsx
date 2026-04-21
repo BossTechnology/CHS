@@ -1862,21 +1862,62 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
 
           {/* Tier Cards */}
           <div style={{ width: "100%", marginBottom: 24 }}>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
-              {tiers.map(tier => {
-                const isSel = selectedTierId === tier.id;
-                return (
-                  <button key={tier.id} onClick={() => setSelectedTierId(tier.id)}
-                    style={{ padding: isMobile ? "10px 8px" : "12px 12px", background: isSel ? "#000" : "#fff", color: isSel ? "#fff" : "#000", border: isSel ? "2px solid #000" : "2px solid #d8d8d8", borderRadius: 2, cursor: "pointer", textAlign: "left", transition: "all 0.15s ease" }}>
-                    <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: isMobile ? 10 : 12, letterSpacing: "0.1em", marginBottom: 3 }}>{tier.label.toUpperCase()}</div>
-                    <div style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, fontWeight: 700, color: isSel ? "#888" : "#aaa", letterSpacing: "0.06em", marginBottom: 6 }}>
-                      {TIER_TOKEN_COST[tier.id]} {TIER_TOKEN_COST[tier.id] === 1 ? "token" : "tokens"}
-                    </div>
-                    <div style={{ fontSize: isMobile ? 10 : 11, lineHeight: 1.6, color: isSel ? "#ccc" : "#666", fontFamily: "'Georgia', serif" }}>{tier.description}</div>
+            {isMobile ? (
+              /* ── Mobile slider ── */
+              (() => {
+                const sliderIdx = tiers.findIndex(t => t.id === selectedTierId);
+                const goPrev = () => { const i = (sliderIdx - 1 + tiers.length) % tiers.length; setSelectedTierId(tiers[i].id); };
+                const goNext = () => { const i = (sliderIdx + 1) % tiers.length; setSelectedTierId(tiers[i].id); };
+                const tier = tiers[sliderIdx];
+                const arrowBtn = (onClick, dir) => (
+                  <button onClick={onClick} style={{ background: "none", border: "1px solid #d0d0d0", borderRadius: 2, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      {dir === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
+                    </svg>
                   </button>
                 );
-              })}
-            </div>
+                return (
+                  <div style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+                    {arrowBtn(goPrev, "left")}
+                    <button onClick={() => {}} style={{ flex: 1, padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, cursor: "default", textAlign: "left" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                        <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{tier.label.toUpperCase()}</div>
+                        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
+                      </div>
+                      <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: "0.06em", marginBottom: 8 }}>
+                        {TIER_TOKEN_COST[tier.id]} {TIER_TOKEN_COST[tier.id] === 1 ? "token" : "tokens"}
+                      </div>
+                      <div style={{ fontSize: 11, lineHeight: 1.6, color: "#ccc", fontFamily: "'Georgia', serif" }}>{tier.description}</div>
+                      {/* Dot indicators */}
+                      <div style={{ display: "flex", gap: 5, marginTop: 12 }}>
+                        {tiers.map((_, i) => (
+                          <button key={i} onClick={() => setSelectedTierId(tiers[i].id)}
+                            style={{ width: i === sliderIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === sliderIdx ? "#fff" : "#555", border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s" }} />
+                        ))}
+                      </div>
+                    </button>
+                    {arrowBtn(goNext, "right")}
+                  </div>
+                );
+              })()
+            ) : (
+              /* ── Desktop grid ── */
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                {tiers.map(tier => {
+                  const isSel = selectedTierId === tier.id;
+                  return (
+                    <button key={tier.id} onClick={() => setSelectedTierId(tier.id)}
+                      style={{ padding: "12px 12px", background: isSel ? "#000" : "#fff", color: isSel ? "#fff" : "#000", border: isSel ? "2px solid #000" : "2px solid #d8d8d8", borderRadius: 2, cursor: "pointer", textAlign: "left", transition: "all 0.15s ease" }}>
+                      <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em", marginBottom: 3 }}>{tier.label.toUpperCase()}</div>
+                      <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, color: isSel ? "#888" : "#aaa", letterSpacing: "0.06em", marginBottom: 6 }}>
+                        {TIER_TOKEN_COST[tier.id]} {TIER_TOKEN_COST[tier.id] === 1 ? "token" : "tokens"}
+                      </div>
+                      <div style={{ fontSize: 11, lineHeight: 1.6, color: isSel ? "#ccc" : "#666", fontFamily: "'Georgia', serif" }}>{tier.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Input Instruction */}
