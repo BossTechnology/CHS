@@ -1601,31 +1601,12 @@ function Section({ title, items, isOpen, onToggle, t, isBlips }) {
 // ─── SHARED HEADER / FOOTER ───────────────────────────────────────────────────
 // ─── CHASS1S WORDMARK ─────────────────────────────────────────────────────────
 function CHSLogo({ height = 42 }) {
-  const fontSize = Math.round(height * 0.45);
-  const paddingH = Math.round(height * 0.35);
-  const paddingV = Math.round(height * 0.18);
-  const borderRadius = Math.round(height * 0.18);
   return (
-    <div style={{
-      background: "#000",
-      borderRadius: borderRadius,
-      padding: `${paddingV}px ${paddingH}px`,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: height,
-      boxSizing: "border-box",
-    }}>
-      <span style={{
-        fontFamily: "'Exo 2', 'Arial Black', sans-serif",
-        fontWeight: 900,
-        fontSize: fontSize,
-        color: "#fff",
-        letterSpacing: "0.04em",
-        lineHeight: 1,
-        whiteSpace: "nowrap",
-      }}>CHASS1S</span>
-    </div>
+    <img
+      src="/logo.png"
+      alt="CHASS1S"
+      style={{ height: height, width: "auto", display: "block", imageRendering: "auto" }}
+    />
   );
 }
 
