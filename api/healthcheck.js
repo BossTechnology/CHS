@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' };
 export default async function handler(req) {
   // Quick diagnostic — shows which env vars are present (not their values)
   const checks = {
