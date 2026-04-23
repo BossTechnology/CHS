@@ -1272,7 +1272,10 @@ export default function App() {
           messages: [{ role: "user", content: buildPrompt(input, tier, currentLang) }],
         }),
       });
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
+      }
       const apiData = await res.json();
       const raw = apiData.content.filter(b => b.type === "text").map(b => b.text).join("");
       const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
