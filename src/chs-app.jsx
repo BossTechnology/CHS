@@ -76,6 +76,19 @@ const supabase = (() => {
       return { error: null };
     },
 
+    async resetPasswordForEmail(email) {
+      const res = await fetch(`${SUPA_URL}/auth/v1/recover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPA_KEY },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { error: { message: data.msg || data.error_description || "Reset failed" } };
+      }
+      return { error: null };
+    },
+
     async getSession() {
       if (_session) return { data: { session: _session }, error: null };
       const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null"));
@@ -252,6 +265,7 @@ const T = {
     beyondProfitTabSub: "Legal, Social & Regulatory Insights",
     bpOptions: { CSR: "CSR", ESG: "ESG", DEI: "DEI", TBL: "TBL", Sustainability: "SUS" },
     bpLabels: { legal: "LEGAL", social: "SOCIAL", regulatory: "REGULATORY", news: "NEWS & DEVELOPMENTS", suggestions: "SUGGESTIONS" },
+    bp: { analyzing: "ANALYZING", gatheringContext: "GATHERING LEGAL & REGULATORY CONTEXT...", generatingInsights: "GENERATING INSIGHTS & SUGGESTIONS...", errorMsg: "Could not generate Beyond Profit insights." },
     pdfControlled: "CONTROLLED",
     pdfUncontrolled: "UNCONTROLLED",
   },
@@ -296,6 +310,7 @@ const T = {
     beyondProfitTabSub: "Perspectivas Legales, Sociales y Regulatorias",
     bpOptions: { CSR: "RSC", ESG: "ESG", DEI: "DEI", TBL: "TBL", Sustainability: "SUS" },
     bpLabels: { legal: "LEGAL", social: "SOCIAL", regulatory: "REGULATORIO", news: "NOTICIAS Y DESARROLLOS", suggestions: "SUGERENCIAS" },
+    bp: { analyzing: "ANALIZANDO", gatheringContext: "RECOPILANDO CONTEXTO LEGAL Y REGULATORIO...", generatingInsights: "GENERANDO INSIGHTS Y SUGERENCIAS...", errorMsg: "No se pudieron generar los insights de Beyond Profit." },
     pdfControlled: "CONTROLADO",
     pdfUncontrolled: "NO CONTROLADO",
   },
@@ -340,6 +355,7 @@ const T = {
     beyondProfitTabSub: "Perspectives Juridiques, Sociales et Réglementaires",
     bpOptions: { CSR: "RSE", ESG: "ESG", DEI: "DEI", TBL: "TBL", Sustainability: "SUS" },
     bpLabels: { legal: "JURIDIQUE", social: "SOCIAL", regulatory: "RÉGLEMENTAIRE", news: "ACTUALITÉS", suggestions: "SUGGESTIONS" },
+    bp: { analyzing: "ANALYSE EN COURS", gatheringContext: "COLLECTE DU CONTEXTE JURIDIQUE ET RÉGLEMENTAIRE...", generatingInsights: "GÉNÉRATION DES INSIGHTS ET SUGGESTIONS...", errorMsg: "Impossible de générer les insights Beyond Profit." },
     pdfControlled: "CONTRÔLÉ",
     pdfUncontrolled: "NON CONTRÔLÉ",
   },
@@ -384,6 +400,7 @@ const T = {
     beyondProfitTabSub: "Insights Jurídicos, Sociais e Regulatórios",
     bpOptions: { CSR: "RSC", ESG: "ESG", DEI: "DEI", TBL: "TBL", Sustainability: "SUS" },
     bpLabels: { legal: "JURÍDICO", social: "SOCIAL", regulatory: "REGULATÓRIO", news: "NOTÍCIAS E DESENVOLVIMENTOS", suggestions: "SUGESTÕES" },
+    bp: { analyzing: "ANALISANDO", gatheringContext: "COLETANDO CONTEXTO JURÍDICO E REGULATÓRIO...", generatingInsights: "GERANDO INSIGHTS E SUGESTÕES...", errorMsg: "Não foi possível gerar os insights Beyond Profit." },
     pdfControlled: "CONTROLADO",
     pdfUncontrolled: "NÃO CONTROLADO",
   },
@@ -635,6 +652,15 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin" }) {
     setLoading(false);
   };
 
+  const handleForgot = async () => {
+    if (!email) return;
+    setLoading(true); setError(""); setSuccess("");
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email);
+    if (err) setError(err.message);
+    else setSuccess("Password reset email sent. Check your inbox.");
+    setLoading(false);
+  };
+
   const inputStyle = {
     width: "100%", padding: "12px 14px", fontFamily: "'Georgia', serif", fontSize: 14,
     border: "1px solid #d0d0d0", outline: "none", boxSizing: "border-box",
@@ -663,7 +689,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin" }) {
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
           letterSpacing: "0.2em", marginBottom: 6 }}>CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
         <h2 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 24px", fontFamily: "'Georgia', serif", color: "#000" }}>
-          {mode === "signin" ? "Sign In to CHASS1S" : "Create Your Account"}
+          {mode === "signin" ? "Sign In to CHASS1S" : mode === "signup" ? "Create Your Account" : "Reset Password"}
         </h2>
 
         {/* ── Social Login Buttons ── */}
@@ -694,59 +720,110 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin" }) {
           <div style={{ flex: 1, height: 1, background: "#e0e0e0" }} />
         </div>
 
-        {/* ── Mode tabs ── */}
-        <div style={{ display: "flex", marginBottom: 20, borderBottom: "2px solid #e0e0e0" }}>
-          {[["signin", "SIGN IN"], ["signup", "CREATE ACCOUNT"]].map(([m, label]) => (
-            <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }}
-              style={{ padding: "7px 16px", border: "none", background: "none", cursor: "pointer",
-                fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900,
-                color: mode === m ? "#000" : "#bbb", letterSpacing: "0.08em",
-                borderBottom: mode === m ? "2px solid #000" : "2px solid transparent", marginBottom: -2 }}>
-              {label}
+        {/* ── Mode tabs (signin / signup only — forgot is a sub-state of signin) ── */}
+        {mode !== "forgot" && (
+          <div style={{ display: "flex", marginBottom: 20, borderBottom: "2px solid #e0e0e0" }}>
+            {[["signin", "SIGN IN"], ["signup", "CREATE ACCOUNT"]].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }}
+                style={{ padding: "7px 16px", border: "none", background: "none", cursor: "pointer",
+                  fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900,
+                  color: mode === m ? "#000" : "#bbb", letterSpacing: "0.08em",
+                  borderBottom: mode === m ? "2px solid #000" : "2px solid transparent", marginBottom: -2 }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Forgot Password mode ── */}
+        {mode === "forgot" ? (
+          <>
+            <label style={labelStyle}>EMAIL ADDRESS</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              style={inputStyle} placeholder="your@email.com"
+              onKeyDown={e => { if (e.key === "Enter") handleForgot(); }} />
+            {error && (
+              <div style={{ background: "#fff5f5", border: "1px solid #ffcccc", padding: "10px 14px",
+                marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#cc0000",
+                lineHeight: 1.5, borderRadius: 2 }}>{error}</div>
+            )}
+            {success && (
+              <div style={{ background: "#f0fff4", border: "1px solid #b2f5c8", padding: "10px 14px",
+                marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#006633",
+                lineHeight: 1.5, borderRadius: 2 }}>{success}</div>
+            )}
+            <button onClick={handleForgot} disabled={loading || !email}
+              style={{ width: "100%", padding: "13px", border: "none", borderRadius: 2,
+                cursor: email ? "pointer" : "not-allowed",
+                background: email ? "#000" : "#e8e8e8",
+                color: email ? "#fff" : "#aaa",
+                fontFamily: "'Courier New', monospace", fontSize: 12, fontWeight: 900,
+                letterSpacing: "0.15em", transition: "all 0.15s" }}>
+              {loading ? "SENDING..." : "SEND RESET EMAIL"}
             </button>
-          ))}
-        </div>
+            <button onClick={() => { setMode("signin"); setError(""); setSuccess(""); }}
+              style={{ marginTop: 12, background: "none", border: "none", cursor: "pointer",
+                fontFamily: "'Courier New', monospace", fontSize: 10, color: "#888",
+                textDecoration: "underline", width: "100%" }}>
+              Back to Sign In
+            </button>
+          </>
+        ) : (
+          <>
+            {/* ── Email / Password fields ── */}
+            <label style={labelStyle}>EMAIL ADDRESS</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              style={inputStyle} placeholder="your@email.com"
+              onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
+            <label style={labelStyle}>PASSWORD</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              style={inputStyle} placeholder="••••••••"
+              onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
 
-        {/* ── Email / Password fields ── */}
-        <label style={labelStyle}>EMAIL ADDRESS</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-          style={inputStyle} placeholder="your@email.com"
-          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
-        <label style={labelStyle}>PASSWORD</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-          style={inputStyle} placeholder="••••••••"
-          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
+            {/* Forgot password link (signin only) */}
+            {mode === "signin" && (
+              <div style={{ textAlign: "right", marginBottom: 14, marginTop: -8 }}>
+                <button onClick={() => { setMode("forgot"); setError(""); setSuccess(""); }}
+                  style={{ background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "'Courier New', monospace", fontSize: 10,
+                    color: "#888", textDecoration: "underline", padding: 0 }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
-        {/* Messages */}
-        {error && (
-          <div style={{ background: "#fff5f5", border: "1px solid #ffcccc", padding: "10px 14px",
-            marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#cc0000",
-            lineHeight: 1.5, borderRadius: 2 }}>{error}</div>
-        )}
-        {success && (
-          <div style={{ background: "#f0fff4", border: "1px solid #b2f5c8", padding: "10px 14px",
-            marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#006633",
-            lineHeight: 1.5, borderRadius: 2 }}>{success}</div>
-        )}
+            {/* Messages */}
+            {error && (
+              <div style={{ background: "#fff5f5", border: "1px solid #ffcccc", padding: "10px 14px",
+                marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#cc0000",
+                lineHeight: 1.5, borderRadius: 2 }}>{error}</div>
+            )}
+            {success && (
+              <div style={{ background: "#f0fff4", border: "1px solid #b2f5c8", padding: "10px 14px",
+                marginBottom: 14, fontFamily: "'Courier New', monospace", fontSize: 11, color: "#006633",
+                lineHeight: 1.5, borderRadius: 2 }}>{success}</div>
+            )}
 
-        {/* Submit */}
-        <button onClick={handleSubmit} disabled={loading || !email || !password}
-          style={{ width: "100%", padding: "13px", border: "none",
-            cursor: email && password ? "pointer" : "not-allowed",
-            background: email && password ? "#000" : "#e8e8e8",
-            color: email && password ? "#fff" : "#aaa",
-            fontFamily: "'Courier New', monospace", fontSize: 12, fontWeight: 900,
-            letterSpacing: "0.15em", transition: "all 0.15s", borderRadius: 2 }}>
-          {loading ? "PROCESSING..." : mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
-        </button>
+            {/* Submit */}
+            <button onClick={handleSubmit} disabled={loading || !email || !password}
+              style={{ width: "100%", padding: "13px", border: "none",
+                cursor: email && password ? "pointer" : "not-allowed",
+                background: email && password ? "#000" : "#e8e8e8",
+                color: email && password ? "#fff" : "#aaa",
+                fontFamily: "'Courier New', monospace", fontSize: 12, fontWeight: 900,
+                letterSpacing: "0.15em", transition: "all 0.15s", borderRadius: 2 }}>
+              {loading ? "PROCESSING..." : mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
+            </button>
 
-        {mode === "signup" && (
-          <p style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#888",
-            textAlign: "center", lineHeight: 1.8, margin: "14px 0 0" }}>
-            New accounts receive{" "}
-            <strong style={{ color: "#000" }}>5 FREE TOKENS</strong>
-            {" "}— no credit card required.
-          </p>
+            {mode === "signup" && (
+              <p style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#888",
+                textAlign: "center", lineHeight: 1.8, margin: "14px 0 0" }}>
+                New accounts receive{" "}
+                <strong style={{ color: "#000" }}>5 FREE TOKENS</strong>
+                {" "}— no credit card required.
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -1659,17 +1736,6 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
                   <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
                     fontWeight: 900, color: "#fff", lineHeight: 1 }}>{initials}</span>
                 </div>
-                {profile && (
-                  <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11,
-                    fontWeight: 900, color: "#000", letterSpacing: "0.04em" }}>
-                    {typeof profile.token_balance === "number"
-                      ? profile.token_balance % 1 === 0
-                        ? profile.token_balance
-                        : profile.token_balance.toFixed(2)
-                      : "—"}
-                    <span style={{ fontSize: 9, color: "#888", marginLeft: 3, fontWeight: 400 }}>TKN</span>
-                  </span>
-                )}
               </button>
             )}
             {/* Menus */}
@@ -1780,7 +1846,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
 
 // ─── PAGE 1 ───────────────────────────────────────────────────────────────────
 function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, popupBlocked }) {
   const t = T[lang];
   const tiers = getTiers(lang);
   const { isMobile, isTablet } = useResponsive();
@@ -1932,6 +1998,15 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
             setBeyondProfitSelections={setBeyondProfitSelections}
             isMobile={isMobile}
           />
+
+          {/* ── Popup blocked notice ── */}
+          {popupBlocked && (
+            <div style={{ background: "#fffbe6", border: "1px solid #f0c040", padding: "10px 16px",
+              fontFamily: "'Courier New', monospace", fontSize: 11, color: "#7a5c00",
+              marginBottom: 12, borderRadius: 2, letterSpacing: "0.04em" }}>
+              POPUP BLOCKED — Generating in this tab instead.
+            </div>
+          )}
 
           {/* ── START FABRICATING button ── */}
           <button onClick={handleFabricateClick}
@@ -2170,7 +2245,7 @@ function KBRsTab({ kbrs, t }) {
 const BP_ICONS = { CSR: "◈", ESG: "⬡", DEI: "✦", TBL: "▣", Sustainability: "⊕" };
 const BP_COLORS = { CSR: "#1a5c3a", ESG: "#1a3a5c", DEI: "#5c1a4a", TBL: "#5c3a1a", Sustainability: "#2d5c1a" };
 
-function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t }) {
+function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRetry }) {
   const { isMobile, isTablet } = useResponsive();
   const pad = isMobile ? "24px 16px" : isTablet ? "36px 24px" : "48px 40px";
   const [openSections, setOpenSections] = useState({});
@@ -2184,15 +2259,15 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#000", animation: "pulse 1.2s ease-in-out 0s infinite" }} />
-          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>ANALYZING {selectedOptions.join(" · ")}...</span>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>{t.bp?.analyzing || "ANALYZING"} {selectedOptions.join(" · ")}...</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#000", animation: "pulse 1.2s ease-in-out 0.3s infinite", opacity: 0.4 }} />
-          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#bbb", letterSpacing: "0.1em" }}>GATHERING LEGAL & REGULATORY CONTEXT...</span>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#bbb", letterSpacing: "0.1em" }}>{t.bp?.gatheringContext || "GATHERING LEGAL & REGULATORY CONTEXT..."}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#000", animation: "pulse 1.2s ease-in-out 0.6s infinite", opacity: 0.3 }} />
-          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#bbb", letterSpacing: "0.1em" }}>GENERATING INSIGHTS & SUGGESTIONS...</span>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#bbb", letterSpacing: "0.1em" }}>{t.bp?.generatingInsights || "GENERATING INSIGHTS & SUGGESTIONS..."}</span>
         </div>
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}`}</style>
@@ -2204,7 +2279,12 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t }) {
       <div style={{ borderBottom: "3px solid #000", paddingBottom: 24, marginBottom: 36 }}>
         <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.02em" }}>Beyond Profit</h2>
       </div>
-      <p style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "#888" }}>Could not generate Beyond Profit insights. {bpError}</p>
+      <p style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "#888", marginBottom: 16 }}>{t.bp?.errorMsg || "Could not generate Beyond Profit insights."} {bpError}</p>
+      {onRetry && (
+        <button onClick={onRetry} style={{ padding: "10px 24px", background: "#000", color: "#fff", border: "none", borderRadius: 2, fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", cursor: "pointer" }}>
+          RETRY
+        </button>
+      )}
     </div>
   );
 
@@ -2298,16 +2378,20 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
     const generate = async () => {
       setBpLoading(true);
       setBpError(null);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
       try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          signal: controller.signal,
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
             max_tokens: 8000,
             messages: [{ role: "user", content: buildBeyondProfitPrompt(userInput, tier, lang, beyondProfitSelections) }],
           }),
         });
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         const apiData = await res.json();
         const raw = apiData.content.filter(b => b.type === "text").map(b => b.text).join("");
@@ -2316,7 +2400,9 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
         const parsed = JSON.parse(raw.slice(f, l + 1));
         setBeyondProfitData(parsed);
       } catch (err) {
-        setBpError(err.message);
+        clearTimeout(timeout);
+        if (err.name === "AbortError") setBpError("Request timed out. Please try again.");
+        else setBpError(err.message);
       } finally {
         setBpLoading(false);
       }
@@ -2482,19 +2568,22 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
   <script>setTimeout(function(){ window.print(); }, 400);</script>
 </body></html>`;
 
-    // Encode as base64 data URI — works in all sandbox environments
+    // Blob URL — works in all modern browsers, no length limit, not blocked by Chrome
     try {
-      const encoded = btoa(unescape(encodeURIComponent(html)));
-      const dataUri = `data:text/html;base64,${encoded}`;
-      const win = window.open(dataUri, "_blank");
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
       if (!win) {
-        // Fallback: create a temporary anchor and click it
+        // Fallback: download as .html file
+        const blobFallback = new Blob([html], { type: "text/html" });
         const a = document.createElement("a");
-        a.href = dataUri;
+        a.href = URL.createObjectURL(blobFallback);
         a.download = `CHASS1S-${business.name.replace(/\s+/g, "-")}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
       }
     } catch(e) {
       console.error("PDF generation error:", e);
@@ -2580,7 +2669,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
       <div style={{ flex:1 }} className="no-print">
         {activeTab==="intro"&&<IntroTab business={business} t={t}/>}
         {activeTab==="kbrs"&&<KBRsTab kbrs={kbrs||[]} t={t}/>}
-        {activeTab==="beyondProfit"&&<BeyondProfitTab bpData={beyondProfitData} selectedOptions={beyondProfitSelections||[]} bpLoading={bpLoading} bpError={bpError} t={t}/>}
+        {activeTab==="beyondProfit"&&<BeyondProfitTab bpData={beyondProfitData} selectedOptions={beyondProfitSelections||[]} bpLoading={bpLoading} bpError={bpError} t={t} onRetry={() => { setBpError(null); setBpLoading(false); setBeyondProfitData(null); }}/>}
         {(activeTab==="ADDIS"||activeTab==="BLIPS")&&(
           <>
             <div style={{ maxWidth:1100, margin:"0 auto", padding: isMobile ? "16px 16px 8px" : "20px 40px 12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
@@ -2635,6 +2724,7 @@ export default function App() {
   const [beyondProfitSelections, setBeyondProfitSelections] = useState([]);
   const [beyondProfitData, setBeyondProfitData] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   // ── Auth state ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(null);
@@ -2795,6 +2885,8 @@ export default function App() {
     const newTab = window.open(newTabUrl, "_blank");
     if (!newTab) {
       localStorage.removeItem(genId);
+      setPopupBlocked(true);
+      setTimeout(() => setPopupBlocked(false), 5000);
       setUserInput(input); setSelectedTier(tier);
       setBeyondProfitSelections(bpSelections); setBeyondProfitData(null);
       setScreen("loading");
@@ -2845,7 +2937,7 @@ export default function App() {
 
   if (screen === "page1") return (
     <>
-      <Page1 onSubmit={generateChassis} lang={lang} setLang={setLang} {...authProps} />
+      <Page1 onSubmit={generateChassis} lang={lang} setLang={setLang} popupBlocked={popupBlocked} {...authProps} />
       <Modals />
     </>
   );
