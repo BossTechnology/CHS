@@ -174,22 +174,9 @@ const SECTION_ICONS = {
 const TIER_TOKEN_COST = { compact: 3, midsize: 5, executive: 10, luxury: 25 };
 const BP_TOKEN_COST = 0.25;
 
-// ─── STRIPE PAYMENT LINKS ─────────────────────────────────────────────────────
-// Replace each URL with your real Stripe Payment Link after creating them in
-// your Stripe Dashboard → Payment Links → Create Link
-const STRIPE_LINKS = {
-  25:   "https://buy.stripe.com/8x23cuh0fevfekS0sm4Vy00",
-  50:   "https://buy.stripe.com/dRmcN49xN9aVfoW1wq4Vy01",
-  100:  "https://buy.stripe.com/dRmdR8aBRfzjekS4IC4Vy02",
-  250:  "https://buy.stripe.com/aFa7sK4dt9aV2Ca3Ey4Vy03",
-  500:  "https://buy.stripe.com/cNi5kC6lB0Ep6Sq3Ey4Vy04",
-  1000: "https://buy.stripe.com/14A9ASeS7bj30u27UO4Vy05",
-};
-const getNearestStripeLink = (amount) => {
-  const tiers = [25, 50, 100, 250, 500, 1000];
-  const nearest = tiers.reduce((prev, curr) => Math.abs(curr - amount) < Math.abs(prev - amount) ? curr : prev);
-  return { url: STRIPE_LINKS[nearest], tier: nearest };
-};
+// ─── STRIPE PAYMENT LINK ──────────────────────────────────────────────────────
+// "Customers choose what to pay" link — prefilled_amount is in cents
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9B6dR8aBRcn72Ca6QK4Vy06";
 
 
 // ─── RESPONSIVE HOOK ─────────────────────────────────────────────────────────
@@ -878,14 +865,15 @@ function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
 
   const handleProceed = () => {
     if (!isValid || !user) return;
-    const { url, tier } = getNearestStripeLink(amountNum);
-    // Store pending purchase so user can see it after returning from Stripe
+    // prefilled_amount is in cents (Stripe "customers choose" links)
+    const cents = Math.round(amountNum * 100);
+    const url = `${STRIPE_PAYMENT_LINK}?prefilled_amount=${cents}&client_reference_id=${user.id}`;
     _tryLS(() => localStorage.setItem("chs_pending_purchase", JSON.stringify({
       userId: user.id, amount: amountNum, totalTokens, timestamp: Date.now(),
       promoCode: promoApplied ? promoCode.trim().toUpperCase() : null,
     })));
     window.open(url, "_blank");
-    setSuccess(`Payment page opened for $${tier.toFixed(2)}. Complete payment on Stripe, then return here and click Refresh Balance in your profile.`);
+    setSuccess(`Payment page opened for $${amountNum.toFixed(2)}. Complete your payment on Stripe, then return here — your tokens will be credited automatically.`);
   };
 
   const rowS = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #f0f0f0" };
@@ -1029,8 +1017,8 @@ function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
           <div style={{ padding: "16px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
             <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
               letterSpacing: "0.12em", color: "#888", marginBottom: 10 }}>CHASSIS COST REFERENCE</div>
-            {[["Compact", "1 token", "$1.00"], ["Mid-Size", "3 tokens", "$3.00"],
-              ["Executive", "5 tokens", "$5.00"], ["Luxury", "10 tokens", "$10.00"],
+            {[["Compact", "3 tokens", "$3.00"], ["Mid-Size", "5 tokens", "$5.00"],
+              ["Executive", "10 tokens", "$10.00"], ["Luxury", "25 tokens", "$25.00"],
               ["Beyond Profit", "0.25 / initiative", "$0.25"]].map(([tier, tokens, price]) => (
               <div key={tier} style={{ display: "flex", justifyContent: "space-between",
                 fontFamily: "'Courier New', monospace", fontSize: 11, padding: "5px 0",
