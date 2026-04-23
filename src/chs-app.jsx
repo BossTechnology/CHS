@@ -217,7 +217,7 @@ const T = {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
     bossLink: "a Boss.Technology",
     pageTitle: "Build a Chassis.",
-    inputInstruction: "BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE,\nOR ANY COMBO — SEPARATED BY COMMAS.",
+    inputInstruction: "ENTER A BUSINESS TYPE, COMPANY NAME, LOCATION, WEBSITE, OBJECTIVE, CONCEPT OR ANY COMBO — SEPARATED BY COMMAS.",
     deployHint: "⌘ + ENTER TO DEPLOY · OPENS IN NEW TAB",
     startBtn: "START FABRICATING",
     whatIsChs: "WHAT IS CHASS1S?",
@@ -584,14 +584,6 @@ const SOCIAL_PROVIDERS = [
     ),
   },
   {
-    id: "facebook", label: "Continue with Facebook",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-      </svg>
-    ),
-  },
-  {
     id: "github", label: "Continue with GitHub",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="#24292F">
@@ -852,28 +844,55 @@ function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
   const promoTokens = promoApplied ? promoBonus : 0;
   const totalTokens = Math.round((baseTokens + volumeBonusTokens + promoTokens) * 100) / 100;
 
-  const PROMO_CODES = { "WELCOME20": 20, "BOSS10": 10, "CHS50": 50 };
-
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     const code = promoCode.trim().toUpperCase();
-    if (PROMO_CODES[code]) {
-      setPromoBonus(PROMO_CODES[code]); setPromoApplied(true); setPromoError("");
-    } else {
-      setPromoError("Invalid promo code."); setPromoApplied(false); setPromoBonus(0);
+    if (!code) return;
+    try {
+      const { data: { session: promoSession } } = await supabase.auth.getSession();
+      const res = await fetch("/api/validate-promo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${promoSession?.access_token}`,
+        },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok && data.bonus > 0) {
+        setPromoBonus(data.bonus); setPromoApplied(true); setPromoError("");
+      } else {
+        setPromoError(data.error || "Invalid promo code."); setPromoApplied(false); setPromoBonus(0);
+      }
+    } catch {
+      setPromoError("Could not validate promo code."); setPromoApplied(false); setPromoBonus(0);
     }
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!isValid || !user) return;
-    // prefilled_amount is in cents (Stripe "customers choose" links)
-    const cents = Math.round(amountNum * 100);
-    const url = `${STRIPE_PAYMENT_LINK}?prefilled_amount=${cents}&client_reference_id=${user.id}`;
-    _tryLS(() => localStorage.setItem("chs_pending_purchase", JSON.stringify({
-      userId: user.id, amount: amountNum, totalTokens, timestamp: Date.now(),
-      promoCode: promoApplied ? promoCode.trim().toUpperCase() : null,
-    })));
-    window.open(url, "_blank");
-    setSuccess(`Payment page opened for $${amountNum.toFixed(2)}. Complete your payment on Stripe, then return here — your tokens will be credited automatically.`);
+    setLoading(true);
+    try {
+      const { data: { session: purchaseSession } } = await supabase.auth.getSession();
+      const res = await fetch("/api/create-purchase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${purchaseSession?.access_token}`,
+        },
+        body: JSON.stringify({
+          amount: amountNum,
+          promoCode: promoApplied ? promoCode.trim().toUpperCase() : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create purchase");
+      window.open(data.stripe_url, "_blank");
+      setSuccess(`Payment page opened for $${amountNum.toFixed(2)}. Complete your payment on Stripe — your tokens will be credited automatically.`);
+    } catch (err) {
+      setError(err.message || "Could not start payment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const rowS = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #f0f0f0" };
@@ -2371,9 +2390,13 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const { data: { session: bpSession } } = await supabase.auth.getSession();
+        const res = await fetch("/api/anthropic", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${bpSession?.access_token}`,
+          },
           signal: controller.signal,
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
@@ -2767,19 +2790,13 @@ export default function App() {
   }, []);
 
   // ── Handle return from Stripe payment ─────────────────────────────────────
+  // Tokens are credited server-side via the Stripe webhook (api/stripe-webhook.js).
+  // On return we just refresh the profile balance from DB.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") !== "success" || !user) return;
-    try {
-      const pending = JSON.parse(localStorage.getItem("chs_pending_purchase") || "null");
-      if (pending && pending.userId === user.id && Date.now() - pending.timestamp < 3600000) {
-        const newBal = Math.round(((profile?.token_balance || 0) + pending.totalTokens) * 100) / 100;
-        supabase.from("profiles").update({ token_balance: newBal }).eq("id", user.id).select().single().then(({ data }) => { if (data) setProfile(data); });
-        supabase.from("token_transactions").insert({ user_id: user.id, type: "purchase", amount: pending.totalTokens, usd_amount: pending.amount, promo_code: pending.promoCode || null, description: `Token purchase — $${pending.amount}` });
-        localStorage.removeItem("chs_pending_purchase");
-      }
-    } catch {}
     window.history.replaceState(null, "", window.location.pathname);
+    fetchProfile(user.id);
   }, [user]);
 
   // ── Sign out ───────────────────────────────────────────────────────────────
@@ -2838,9 +2855,13 @@ export default function App() {
   // ── Core generation logic ─────────────────────────────────────────────────
   const runGeneration = async (input, tier, currentLang, bpSelections) => {
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const { data: { session: genSession } } = await supabase.auth.getSession();
+      const res = await fetch("/api/anthropic", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${genSession?.access_token}`,
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: tier.tokens,
