@@ -1,3 +1,5 @@
+import { checkRateLimit } from './_ratelimit.js'
+
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
 async function verifyJWT(token) {
@@ -32,6 +34,9 @@ export default async function handler(req) {
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
   }
+
+  const rateLimitRes = await checkRateLimit('promo', user.id)
+  if (rateLimitRes) return rateLimitRes
 
   const { code } = await req.json().catch(() => ({}));
   if (!code) {

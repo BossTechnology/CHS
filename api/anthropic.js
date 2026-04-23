@@ -1,3 +1,5 @@
+import { checkRateLimit } from './_ratelimit.js'
+
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
 const corsHeaders = (origin) => ({
@@ -52,6 +54,9 @@ export default async function handler(req) {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  const rateLimitRes = await checkRateLimit('generation', user.id)
+  if (rateLimitRes) return rateLimitRes
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
