@@ -30,7 +30,7 @@ async function verifyJWT(token) {
   const res = await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/user`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      apikey: process.env.VITE_SUPABASE_ANON_KEY,
+      apikey: process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY,
     },
   });
   if (!res.ok) return null;
