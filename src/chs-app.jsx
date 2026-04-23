@@ -151,7 +151,9 @@ const supabase = (() => {
     }),
   });
 
-  return { auth, from };
+  const rpc = (fn, params = {}) => _q("POST", `${SUPA_URL}/rest/v1/rpc/${fn}`, params, {});
+
+  return { auth, from, rpc };
 })();
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
@@ -2816,21 +2818,32 @@ export default function App() {
     });
   };
 
-  // ── Deduct tokens (personal or workspace) ─────────────────────────────────
+  // ── Deduct tokens — atomic via Supabase RPC (prevents race conditions) ───────
   const deductTokens = async (tier, bpSelections, parsed, input, currentLang) => {
     const u = userRef.current;
     const p = profileRef.current;
     if (!u) return;
     const cost = (TIER_TOKEN_COST[tier.id] || 1) + (bpSelections.length * BP_TOKEN_COST);
-    if (currentWorkspace) {
-      const newBal = Math.max(0, (currentWorkspace.token_balance || 0) - cost);
-      const { data } = await supabase.from("workspaces").update({ token_balance: newBal }).eq("id", currentWorkspace.id).select().single();
-      if (data) setCurrentWorkspace(prev => ({ ...prev, token_balance: newBal }));
+    const wsId = currentWorkspace?.id ?? null;
+
+    // Atomic deduction — SQL function uses FOR UPDATE lock to prevent double-spend
+    const { data: ok, error: rpcErr } = await supabase.rpc("deduct_tokens", {
+      p_user_id: u.id,
+      p_workspace_id: wsId,
+      p_amount: cost,
+    });
+    if (rpcErr) console.error("deduct_tokens RPC error:", rpcErr.message);
+    else if (ok === false) console.warn("deduct_tokens: insufficient balance at commit time");
+
+    // Refresh local balance from DB to stay in sync
+    if (wsId) {
+      const { data: ws } = await supabase.from("workspaces").select("*").eq("id", wsId).single();
+      if (ws) setCurrentWorkspace(ws);
     } else if (p) {
-      const newBal = Math.max(0, (p.token_balance || 0) - cost);
-      const { data } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", u.id).select().single();
-      if (data) { setProfile(data); profileRef.current = data; }
+      const { data: prof } = await supabase.from("profiles").select("*").eq("id", u.id).single();
+      if (prof) { setProfile(prof); profileRef.current = prof; }
     }
+
     await saveChassis(parsed, tier, input, bpSelections, currentLang);
   };
 
