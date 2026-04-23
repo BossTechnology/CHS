@@ -1,3 +1,5 @@
+import { checkRateLimit } from './_ratelimit.js'
+
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 const STRIPE_PAYMENT_LINK = process.env.STRIPE_PAYMENT_LINK || "https://buy.stripe.com/9B6dR8aBRcn72Ca6QK4Vy06";
 
@@ -59,6 +61,9 @@ export default async function handler(req) {
   if (!user) {
     return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers: corsHeaders });
   }
+
+  const rateLimitRes = await checkRateLimit('purchase', user.id)
+  if (rateLimitRes) return rateLimitRes
 
   const body = await req.json().catch(() => null);
   const { amount, promoCode } = body || {};
