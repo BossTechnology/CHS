@@ -803,7 +803,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: "claude-sonnet-4-6",
+            model: "claude-sonnet-4-5",
             max_tokens: 8000,
             messages: [{ role: "user", content: buildBeyondProfitPrompt(userInput, tier, lang, beyondProfitSelections) }],
           }),
@@ -1267,7 +1267,7 @@ export default function App() {
           "Authorization": `Bearer ${genSession?.access_token}`,
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
+          model: "claude-sonnet-4-5",
           max_tokens: tier.tokens,
           messages: [{ role: "user", content: buildPrompt(input, tier, currentLang) }],
         }),
