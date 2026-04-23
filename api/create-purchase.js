@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
