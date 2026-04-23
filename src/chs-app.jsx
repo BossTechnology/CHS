@@ -809,9 +809,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
           }),
         });
         clearTimeout(timeout);
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const apiData = await res.json();
-        const raw = apiData.content.filter(b => b.type === "text").map(b => b.text).join("");
+        const raw = await readAnthropicStream(res);
         const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
         if (f === -1 || l === -1) throw new Error("No valid JSON in response.");
         const parsed = JSON.parse(raw.slice(f, l + 1));
@@ -1256,6 +1254,37 @@ export default function App() {
     await saveChassis(parsed, tier, input, bpSelections, currentLang);
   };
 
+  // ── SSE stream reader — accumulates Anthropic text_delta events ──────────
+  const readAnthropicStream = async (res) => {
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(payload);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+            text += evt.delta.text;
+          }
+        } catch { /* ignore malformed SSE lines */ }
+      }
+    }
+    return text;
+  };
+
   // ── Core generation logic ─────────────────────────────────────────────────
   const runGeneration = async (input, tier, currentLang, bpSelections) => {
     try {
@@ -1272,14 +1301,9 @@ export default function App() {
           messages: [{ role: "user", content: buildPrompt(input, tier, currentLang) }],
         }),
       });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
-      }
-      const apiData = await res.json();
-      const raw = apiData.content.filter(b => b.type === "text").map(b => b.text).join("");
+      const raw = await readAnthropicStream(res);
       const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
-      if (f === -1 || l === -1) throw new Error("No valid JSON found.");
+      if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
       const parsed = JSON.parse(raw.slice(f, l + 1));
       setChassisData(parsed);
       setScreen("page2");
