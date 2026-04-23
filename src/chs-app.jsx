@@ -171,7 +171,7 @@ const SECTION_ICONS = {
   BizOps: "✦", Logistics: "⬢", Inventory: "▤", Production: "⚙", Sales: "◎",
 };
 
-const TIER_TOKEN_COST = { compact: 1, midsize: 3, executive: 5, luxury: 10 };
+const TIER_TOKEN_COST = { compact: 3, midsize: 5, executive: 10, luxury: 25 };
 const BP_TOKEN_COST = 0.25;
 
 // ─── STRIPE PAYMENT LINKS ─────────────────────────────────────────────────────
