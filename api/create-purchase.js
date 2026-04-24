@@ -2,7 +2,6 @@ export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
-const STRIPE_PAYMENT_LINK = process.env.STRIPE_PAYMENT_LINK || "https://buy.stripe.com/9B6dR8aBRcn72Ca6QK4Vy06";
 
 const PROMO_CODES = {
   WELCOME20: 20,
@@ -40,6 +39,7 @@ async function verifyJWT(token) {
 
 export default async function handler(req) {
   const origin = req.headers.get("origin") || "";
+  const appUrl = process.env.VITE_APP_URL || "https://chass1s.com";
   const corsHeaders = {
     "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : "",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -63,8 +63,8 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers: corsHeaders });
   }
 
-  const rateLimitRes = await checkRateLimit('purchase', user.id)
-  if (rateLimitRes) return rateLimitRes
+  const rateLimitRes = await checkRateLimit('purchase', user.id);
+  if (rateLimitRes) return rateLimitRes;
 
   const body = await req.json().catch(() => null);
   const { amount, promoCode } = body || {};
@@ -84,6 +84,7 @@ export default async function handler(req) {
   }
 
   const totalTokens = calcTokens(amountNum, promoUpper);
+  const cents = Math.round(amountNum * 100);
 
   // Store pending purchase server-side (bypassing RLS with service key)
   const insertRes = await fetch(
@@ -114,10 +115,44 @@ export default async function handler(req) {
   }
 
   const [record] = await insertRes.json();
-  const cents = Math.round(amountNum * 100);
-  const stripeUrl = `${STRIPE_PAYMENT_LINK}?prefilled_amount=${cents}&client_reference_id=${record.id}`;
 
-  return new Response(JSON.stringify({ stripe_url: stripeUrl, purchase_id: record.id }), {
+  // Create Stripe Checkout Session via REST API (Edge-compatible, no npm package needed)
+  const params = new URLSearchParams({
+    mode: "payment",
+    "line_items[0][price_data][currency]": "usd",
+    "line_items[0][price_data][product_data][name]": "CHASS1S Tokens",
+    "line_items[0][price_data][product_data][description]": `${totalTokens} tokens · ${amountNum} USD${promoUpper ? ` (promo: ${promoUpper})` : ""}`,
+    "line_items[0][price_data][unit_amount]": String(cents),
+    "line_items[0][quantity]": "1",
+    success_url: `${appUrl}/?payment=success`,
+    cancel_url: `${appUrl}/?payment=cancelled`,
+    client_reference_id: record.id,
+    customer_email: user.email || "",
+    "metadata[purchase_id]": record.id,
+    "metadata[user_id]": user.id,
+    "metadata[total_tokens]": String(totalTokens),
+  });
+
+  const sessionRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  });
+
+  if (!sessionRes.ok) {
+    const err = await sessionRes.json().catch(() => ({}));
+    console.error("Stripe session creation failed:", err);
+    return new Response(JSON.stringify({ error: "Failed to create payment session" }), {
+      status: 500, headers: corsHeaders,
+    });
+  }
+
+  const session = await sessionRes.json();
+
+  return new Response(JSON.stringify({ stripe_url: session.url, purchase_id: record.id }), {
     status: 200,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
