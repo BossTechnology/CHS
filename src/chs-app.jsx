@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import supabase from "./lib/supabase";
 import { useResponsive } from "./hooks/useResponsive";
 import { LANGUAGES, detectLanguage, T, TIER_CONFIG, getTiers } from "./i18n/translations.js";
-import { buildPrompt, buildBeyondProfitPrompt } from "./features/generation/prompts";
+import {
+  buildChassisSystemBlocks,
+  buildChassisUserMessage,
+  buildBeyondProfitSystemBlocks,
+  buildBeyondProfitUserMessage,
+} from "./features/generation/prompts";
 import { AuthModal } from "./features/auth/AuthModal.jsx";
 import { AccountMenu } from "./features/auth/AccountMenu.jsx";
 import { TokenPurchaseModal } from "./features/billing/TokenPurchaseModal.jsx";
@@ -801,7 +806,8 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
             max_tokens: 8000,
-            messages: [{ role: "user", content: buildBeyondProfitPrompt(userInput, tier, lang, beyondProfitSelections) }],
+            system: buildBeyondProfitSystemBlocks(),
+            messages: [{ role: "user", content: buildBeyondProfitUserMessage(userInput, tier, lang, beyondProfitSelections) }],
           }),
         });
         clearTimeout(timeout);
@@ -1294,7 +1300,8 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-5",
           max_tokens: tier.tokens,
-          messages: [{ role: "user", content: buildPrompt(input, tier, currentLang) }],
+          system: buildChassisSystemBlocks(),
+          messages: [{ role: "user", content: buildChassisUserMessage(input, tier, currentLang) }],
         }),
       });
       const raw = await readAnthropicStream(res);
