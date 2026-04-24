@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import supabase from "./lib/supabase.js";
-import { useResponsive } from "./hooks/useResponsive.js";
+import supabase from "./lib/supabase";
+import { useResponsive } from "./hooks/useResponsive";
 import { LANGUAGES, detectLanguage, T, TIER_CONFIG, getTiers } from "./i18n/translations.js";
-import { buildPrompt, buildBeyondProfitPrompt } from "./features/generation/prompts.js";
+import { buildPrompt, buildBeyondProfitPrompt } from "./features/generation/prompts";
 import { AuthModal } from "./features/auth/AuthModal.jsx";
 import { AccountMenu } from "./features/auth/AccountMenu.jsx";
 import { TokenPurchaseModal } from "./features/billing/TokenPurchaseModal.jsx";

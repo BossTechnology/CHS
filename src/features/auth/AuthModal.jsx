@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import supabase from "../../lib/supabase.js";
+import supabase from "../../lib/supabase";
 
 const SOCIAL_PROVIDERS = [
   {
