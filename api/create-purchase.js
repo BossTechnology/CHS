@@ -3,12 +3,6 @@ import { checkRateLimit } from './_ratelimit.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
-const PROMO_CODES = {
-  WELCOME20: 20,
-  BOSS10: 10,
-  CHS50: 50,
-};
-
 function getVolumeBonus(amt) {
   if (amt >= 500) return 0.30;
   if (amt >= 250) return 0.25;
@@ -17,12 +11,31 @@ function getVolumeBonus(amt) {
   return 0;
 }
 
-function calcTokens(amountUsd, promoCode) {
+function calcTokens(amountUsd, promoBonusTokens) {
   const base = amountUsd;
   const bonusPct = getVolumeBonus(amountUsd);
   const volumeBonus = Math.round(base * bonusPct * 100) / 100;
-  const promoBonus = promoCode ? (PROMO_CODES[promoCode.toUpperCase()] || 0) : 0;
-  return Math.round((base + volumeBonus + promoBonus) * 100) / 100;
+  return Math.round((base + volumeBonus + (promoBonusTokens || 0)) * 100) / 100;
+}
+
+// Look up and validate a promo code from the DB.
+// Returns { bonus_tokens } on success, null if invalid/expired/maxed.
+async function lookupPromo(code) {
+  const svcHeaders = {
+    apikey: process.env.SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+  };
+  const res = await fetch(
+    `${process.env.VITE_SUPABASE_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(code)}&active=eq.true&select=bonus_tokens,max_uses,uses_count,expires_at`,
+    { headers: svcHeaders }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json();
+  if (!rows || rows.length === 0) return null;
+  const promo = rows[0];
+  if (promo.expires_at && new Date(promo.expires_at) < new Date()) return null;
+  if (promo.max_uses !== null && promo.uses_count >= promo.max_uses) return null;
+  return promo;
 }
 
 async function verifyJWT(token) {
@@ -77,13 +90,18 @@ export default async function handler(req) {
   }
 
   const promoUpper = promoCode ? promoCode.trim().toUpperCase() : null;
-  if (promoUpper && !PROMO_CODES[promoUpper]) {
-    return new Response(JSON.stringify({ error: "Invalid promo code" }), {
-      status: 400, headers: corsHeaders,
-    });
+  let promoBonusTokens = 0;
+  if (promoUpper) {
+    const promo = await lookupPromo(promoUpper);
+    if (!promo) {
+      return new Response(JSON.stringify({ error: "Invalid or expired promo code" }), {
+        status: 400, headers: corsHeaders,
+      });
+    }
+    promoBonusTokens = promo.bonus_tokens;
   }
 
-  const totalTokens = calcTokens(amountNum, promoUpper);
+  const totalTokens = calcTokens(amountNum, promoBonusTokens);
   const cents = Math.round(amountNum * 100);
 
   // Store pending purchase server-side (bypassing RLS with service key)
