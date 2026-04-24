@@ -1,6 +1,7 @@
 import { LANGUAGES } from "../../i18n/translations.js";
+import type { LangCode, Tier, BeyondProfitKey } from "../../types";
 
-const BP_FULL_NAMES = {
+const BP_FULL_NAMES: Record<BeyondProfitKey, string> = {
   CSR: "Corporate Social Responsibility (CSR)",
   ESG: "Environmental, Social, and Governance (ESG)",
   DEI: "Diversity, Equity, and Inclusion (DEI)",
@@ -8,9 +9,11 @@ const BP_FULL_NAMES = {
   Sustainability: "Sustainability",
 };
 
-export function buildPrompt(userInput, tier, lang) {
+export function buildPrompt(userInput: string, tier: Tier, lang: LangCode): string {
   const langName = LANGUAGES.find(l => l.code === lang)?.label || "English";
-  const langInstruction = lang === "PT" ? "Brazilian Portuguese (Português do Brasil) — use Brazilian spelling and vocabulary, not European Portuguese" : langName;
+  const langInstruction = lang === "PT"
+    ? "Brazilian Portuguese (Português do Brasil) — use Brazilian spelling and vocabulary, not European Portuguese"
+    : langName;
   return `You are a business observability expert building a CHASS1S Chassis analysis. The user has provided: "${userInput}"
 
 CRITICAL: Generate ALL text content in ${langInstruction}. Every description, value point, KBR title, and narrative must be written natively in ${langInstruction}.
@@ -63,12 +66,12 @@ Respond ONLY with a valid JSON object — no markdown, no backticks, no preamble
 
 Rules:
 - ALL text values in ${langInstruction}
-- ${tier.addisCount} items per ADDIS section, ${tier.blipsCount} per BLIPS section, ${tier.kbrCount} KBRs per area
-- Descriptions: ${tier.descLength}
+- ${(tier as unknown as Record<string, string>).addisCount} items per ADDIS section, ${(tier as unknown as Record<string, string>).blipsCount} per BLIPS section, ${(tier as unknown as Record<string, string>).kbrCount} KBRs per area
+- Descriptions: ${(tier as unknown as Record<string, string>).descLength}
 - Be highly specific to this exact business type
 - env: ONLY "Controlled", "Uncontrolled", or "Uncontrolled, Real World"
 - inEx: ONLY "Internal" or "External"
-- ${tier.extras || "Include 1–2 real-world factors tagged 'Uncontrolled, Real World' in relevant BLIPS sections."}
+- ${(tier as unknown as Record<string, string>).extras || "Include 1–2 real-world factors tagged 'Uncontrolled, Real World' in relevant BLIPS sections."}
 - BLIPS data = business observability data. ADDIS data = tech metrics.
 
 ═══════════════════════════════════════════════════════════════════════
@@ -113,11 +116,19 @@ KEY PRINCIPLE: ADDIS describes the TECHNOLOGY STACK. BLIPS describes the BUSINES
 - Return ONLY the JSON object.`;
 }
 
-export function buildBeyondProfitPrompt(userInput, tier, lang, selectedOptions) {
+export function buildBeyondProfitPrompt(
+  userInput: string,
+  tier: Tier,
+  lang: LangCode,
+  selectedOptions: BeyondProfitKey[]
+): string {
   const langName = LANGUAGES.find(l => l.code === lang)?.label || "English";
-  const langInstruction = lang === "PT" ? "Brazilian Portuguese (Português do Brasil) — use Brazilian spelling and vocabulary, not European Portuguese" : langName;
+  const langInstruction = lang === "PT"
+    ? "Brazilian Portuguese (Português do Brasil) — use Brazilian spelling and vocabulary, not European Portuguese"
+    : langName;
   const optionNames = selectedOptions.map(o => BP_FULL_NAMES[o] || o).join(", ");
-  const itemCount = tier.id === "compact" ? "2-3" : tier.id === "midsize" ? "3-4" : tier.id === "executive" ? "4-5" : "5-6";
+  const t = tier as unknown as Record<string, string>;
+  const itemCount = t.id === "compact" ? "2-3" : t.id === "midsize" ? "3-4" : t.id === "executive" ? "4-5" : "5-6";
 
   const optionBlocks = selectedOptions.map(opt => {
     const fullName = BP_FULL_NAMES[opt] || opt;
