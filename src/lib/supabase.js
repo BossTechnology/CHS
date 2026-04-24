@@ -15,6 +15,15 @@ const supabase = (() => {
 
   const _notify = (session) => _listeners.forEach(fn => fn(null, session ? { user: session.user } : null));
 
+  // Ensure expires_at is always a Unix timestamp so expiry checks are reliable
+  const _normalizeSession = (data) => {
+    if (!data) return data;
+    if (!data.expires_at && data.expires_in) {
+      return { ...data, expires_at: Math.floor(Date.now() / 1000) + data.expires_in };
+    }
+    return data;
+  };
+
   const _q = async (method, url, body, opts = {}) => {
     const { single = false, returnData = false } = opts;
     const prefer = returnData || single ? "return=representation" : "return=minimal";
@@ -45,9 +54,9 @@ const supabase = (() => {
       const data = await res.json();
       if (!res.ok) return { data: null, error: { message: data.msg || data.error_description || "Signup failed" } };
       if (data.access_token) {
-        _session = data;
-        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(data)));
-        _notify(data);
+        _session = _normalizeSession(data);
+        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+        _notify(_session);
       }
       return { data, error: null };
     },
@@ -60,9 +69,9 @@ const supabase = (() => {
       });
       const data = await res.json();
       if (!res.ok) return { data: null, error: { message: data.error_description || data.msg || "Sign in failed" } };
-      _session = data;
-      _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(data)));
-      _notify(data);
+      _session = _normalizeSession(data);
+      _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+      _notify(_session);
       return { data: { user: data.user, session: data }, error: null };
     },
 
@@ -87,11 +96,56 @@ const supabase = (() => {
       return { error: null };
     },
 
+    async refreshSession() {
+      const refreshToken = _session?.refresh_token;
+      if (!refreshToken) {
+        _session = null;
+        _tryLS(() => localStorage.removeItem("chs_sess"));
+        _notify(null);
+        return { data: { session: null }, error: { message: "No refresh token" } };
+      }
+      try {
+        const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": SUPA_KEY },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          _session = null;
+          _tryLS(() => localStorage.removeItem("chs_sess"));
+          _notify(null);
+          return { data: { session: null }, error: { message: data.error_description || "Token refresh failed" } };
+        }
+        _session = _normalizeSession(data);
+        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+        _notify(_session);
+        return { data: { session: _session }, error: null };
+      } catch (e) {
+        return { data: { session: null }, error: { message: e.message } };
+      }
+    },
+
     async getSession() {
-      if (_session) return { data: { session: _session }, error: null };
-      const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null"));
-      if (stored) { _session = stored; return { data: { session: stored }, error: null }; }
-      return { data: { session: null }, error: null };
+      // Load from localStorage if not in memory
+      if (!_session) {
+        const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null"));
+        if (stored) _session = stored;
+      }
+      if (!_session) return { data: { session: null }, error: null };
+
+      // Legacy sessions without expires_at: force refresh so we get a fresh token+expiry
+      if (!_session.expires_at) {
+        return await auth.refreshSession();
+      }
+
+      // Check if access_token is expired (or expires within 30s)
+      const now = Math.floor(Date.now() / 1000);
+      if (now >= _session.expires_at - 30) {
+        return await auth.refreshSession();
+      }
+
+      return { data: { session: _session }, error: null };
     },
 
     onAuthStateChange(callback) {
