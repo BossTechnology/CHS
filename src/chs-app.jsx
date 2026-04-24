@@ -179,9 +179,8 @@ function AppFooter({ t }) {
   const { isMobile } = useResponsive();
   return (
     <div style={{ borderTop: "3px solid #000", background: "#000", padding: isMobile ? "14px 16px" : "18px 40px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>CHASS1S · Business Observability (BO11Y) Framework </div>
-        <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#fff", letterSpacing: "0.1em", fontWeight: 700, textDecoration: "none" }}>©️ 2026 88 GREENWICH AVE, LLC d/b/a CHASS1S</a>
+      <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
+        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#fff", letterSpacing: "0.1em", fontWeight: 700 }}>©️ 2026 88 GREENWICH AVE LLC d/b/a CHASS1S</span>
       </div>
     </div>
   );
