@@ -30,9 +30,6 @@ const SECTION_ICONS = {
 const TIER_TOKEN_COST = { compact: 3, midsize: 5, executive: 10, luxury: 25 };
 const BP_TOKEN_COST = 0.25;
 
-// ─── STRIPE PAYMENT LINK ──────────────────────────────────────────────────────
-// "Customers choose what to pay" link — prefilled_amount is in cents
-const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9B6dR8aBRcn72Ca6QK4Vy06";
 
 
 
