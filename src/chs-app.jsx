@@ -113,7 +113,7 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <CHSLogo height={isMobile ? 32 : 42} />
           <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>Bo11y FRAMEWORK</span>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>BO11Y FRAMEWORK</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
           </div>
         </div>
@@ -180,8 +180,8 @@ function AppFooter({ t }) {
   return (
     <div style={{ borderTop: "3px solid #000", background: "#000", padding: isMobile ? "14px 16px" : "18px 40px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
-        <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#fff", letterSpacing: "0.1em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
+        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", letterSpacing: "0.1em" }}>CHASS1S · Business Observability (BO11Y) Framework </div>
+        <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#fff", letterSpacing: "0.1em", fontWeight: 700, textDecoration: "none" }}>©️ 2026 88 GREENWICH AVE, LLC d/b/a CHASS1S</a>
       </div>
     </div>
   );
