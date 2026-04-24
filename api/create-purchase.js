@@ -121,17 +121,18 @@ export default async function handler(req) {
     mode: "payment",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][product_data][name]": "CHASS1S Tokens",
-    "line_items[0][price_data][product_data][description]": `${totalTokens} tokens · ${amountNum} USD${promoUpper ? ` (promo: ${promoUpper})` : ""}`,
     "line_items[0][price_data][unit_amount]": String(cents),
     "line_items[0][quantity]": "1",
     success_url: `${appUrl}/?payment=success`,
     cancel_url: `${appUrl}/?payment=cancelled`,
     client_reference_id: record.id,
-    customer_email: user.email || "",
     "metadata[purchase_id]": record.id,
     "metadata[user_id]": user.id,
     "metadata[total_tokens]": String(totalTokens),
   });
+
+  // Only include customer_email if present — Stripe rejects empty strings
+  if (user.email) params.set("customer_email", user.email);
 
   const sessionRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
@@ -144,8 +145,9 @@ export default async function handler(req) {
 
   if (!sessionRes.ok) {
     const err = await sessionRes.json().catch(() => ({}));
-    console.error("Stripe session creation failed:", err);
-    return new Response(JSON.stringify({ error: "Failed to create payment session" }), {
+    const stripeMsg = err?.error?.message || JSON.stringify(err);
+    console.error("Stripe session creation failed:", stripeMsg);
+    return new Response(JSON.stringify({ error: `Payment session error: ${stripeMsg}` }), {
       status: 500, headers: corsHeaders,
     });
   }
