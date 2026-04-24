@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import supabase from "../../lib/supabase.js";
+import supabase from "../../lib/supabase";
 
 function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
   const [amountStr, setAmountStr] = useState("25.00");

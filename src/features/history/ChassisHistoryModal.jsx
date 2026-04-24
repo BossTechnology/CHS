@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import supabase from "../../lib/supabase.js";
+import supabase from "../../lib/supabase";
 
 const TIER_LABELS = { compact: "Compact", midsize: "Mid-Size", executive: "Executive", luxury: "Luxury" };
 
