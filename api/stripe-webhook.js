@@ -29,6 +29,15 @@ async function creditTokens(userId, totalTokens, purchaseId) {
     headers,
     body: JSON.stringify({ fulfilled_at: new Date().toISOString() }),
   });
+
+  // Atomically increment promo code uses_count if one was used
+  if (purchase.promo_code) {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/increment_promo_uses`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ p_code: purchase.promo_code }),
+    }).catch(() => {}); // non-critical — don't fail the whole webhook
+  }
 }
 
 export default async function handler(req) {
