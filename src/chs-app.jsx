@@ -93,11 +93,15 @@ function Section({ title, items, isOpen, onToggle, t, isBlips }) {
 // ─── SHARED HEADER / FOOTER ───────────────────────────────────────────────────
 // ─── CHASS1S WORDMARK ─────────────────────────────────────────────────────────
 function CHSLogo({ height = 42 }) {
+  // Maintain 400×160 native aspect ratio (2.5 : 1)
+  const width = Math.round(height * (400 / 160));
   return (
     <img
       src="/logo.png"
       alt="CHASS1S"
-      style={{ height: height, width: "auto", display: "block", imageRendering: "auto" }}
+      width={width}
+      height={height}
+      style={{ width, height, display: "block", imageRendering: "auto" }}
     />
   );
 }
@@ -113,7 +117,7 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
     <div style={{ borderBottom: "1px solid #e0e0e0", background: "#fff", padding: isMobile ? "0 16px" : "0 40px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", flexWrap: "nowrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
-          <CHSLogo height={isMobile ? 32 : 42} />
+          <CHSLogo height={isMobile ? 48 : 160} />
           <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
             <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#111", letterSpacing: "0.08em", fontWeight: 700, whiteSpace: "nowrap" }}>BO11Y FRAMEWORK</span>
             <a href="http://boss.technology" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 9 : 10, color: "#888", letterSpacing: "0.06em", fontWeight: 700, textDecoration: "none" }}>a Boss.Technology</a>
