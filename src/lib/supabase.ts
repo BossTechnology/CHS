@@ -179,6 +179,45 @@ const supabase = (() => {
       window.location.href = `${SUPA_URL}/auth/v1/authorize?${params}`;
       return Promise.resolve({ data: { url: `${SUPA_URL}/auth/v1/authorize?${params}` }, error: null });
     },
+
+    // Called once on app boot — reads the OAuth hash fragment Supabase puts in
+    // the URL after a successful provider redirect (access_token, refresh_token…)
+    handleOAuthCallback(): boolean {
+      if (typeof window === "undefined") return false;
+      const hash = window.location.hash.slice(1);
+      if (!hash) return false;
+      const params = new URLSearchParams(hash);
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      const expires_in = params.get("expires_in");
+      const token_type = params.get("token_type");
+      if (!access_token || !refresh_token) return false;
+
+      // Fetch the user object with the new token
+      fetch(`${SUPA_URL}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${access_token}`, apikey: SUPA_KEY },
+      })
+        .then(r => r.json())
+        .then((user: SupabaseUser) => {
+          if (!user?.id) return;
+          const session: SupabaseSession = {
+            access_token,
+            refresh_token,
+            token_type: token_type || "bearer",
+            expires_in: expires_in ? Number(expires_in) : 3600,
+            expires_at: Math.floor(Date.now() / 1000) + (expires_in ? Number(expires_in) : 3600),
+            user,
+          };
+          _session = session;
+          _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(session)));
+          _notify(session);
+          // Clean the hash from the URL without a page reload
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+        })
+        .catch(() => {});
+
+      return true;
+    },
   };
 
   const from = (table: string) => ({
