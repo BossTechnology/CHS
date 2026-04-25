@@ -3,6 +3,11 @@ import * as Sentry from '@sentry/react'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import App from './chs-app.jsx'
+import supabase from './lib/supabase'
+
+// Handle OAuth redirect callback — reads #access_token from URL hash
+// that Supabase appends after Google / GitHub / LinkedIn login
+supabase.auth.handleOAuthCallback()
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
