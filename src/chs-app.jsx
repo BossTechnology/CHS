@@ -523,19 +523,27 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
 }
 
 // ─── LOADING ──────────────────────────────────────────────────────────────────
-function LoadingScreen({ input, tierLabel, t }) {
+function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview = "" }) {
   const [step, setStep] = useState(0);
+  const streaming = streamedChars > 0;
+
   useEffect(() => {
+    // Advance steps until streaming starts, then jump to last step
+    if (streaming) {
+      setStep(t.loadingSteps.length - 1);
+      return;
+    }
     const iv = setInterval(() => setStep(p => p < t.loadingSteps.length - 1 ? p + 1 : p), 900);
     return () => clearInterval(iv);
-  }, []);
+  }, [streaming, t.loadingSteps.length]);
+
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 20px" }}>
-      <div style={{ textAlign: "center", maxWidth: 480 }}>
+      <div style={{ textAlign: "center", maxWidth: 520 }}>
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555", letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · {t.tagline}</div>
         {tierLabel && <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#444", letterSpacing: "0.15em", marginBottom: 32 }}>{tierLabel.toUpperCase()} CHASSIS</div>}
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 13, color: "#888", marginBottom: 8, letterSpacing: "0.06em" }}>{t.loadingTitle}</div>
-        <div style={{ fontFamily: "'Georgia', serif", fontSize: 18, color: "#fff", marginBottom: 48, lineHeight: 1.5, fontStyle: "italic" }}>"{input}"</div>
+        <div style={{ fontFamily: "'Georgia', serif", fontSize: 18, color: "#fff", marginBottom: 36, lineHeight: 1.5, fontStyle: "italic" }}>"{input}"</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start", maxWidth: 360, margin: "0 auto" }}>
           {t.loadingSteps.map((s, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, opacity: i <= step ? 1 : 0.2, transition: "opacity 0.4s" }}>
@@ -544,9 +552,32 @@ function LoadingScreen({ input, tierLabel, t }) {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 48, display: "flex", gap: 6, justifyContent: "center" }}>
-          {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", opacity: 0.3, animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
+
+        {/* ── Live stream terminal ───────────────────────────────────────── */}
+        <div style={{
+          marginTop: 32, maxWidth: 480, margin: "32px auto 0",
+          background: "#0d0d0d", border: "1px solid #222",
+          borderRadius: 3, padding: "12px 14px", textAlign: "left", minHeight: 64,
+        }}>
+          <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#333", letterSpacing: "0.15em", marginBottom: 8 }}>
+            RAW STREAM {streaming ? `· ${streamedChars.toLocaleString()} CHARS` : "· WAITING..."}
+          </div>
+          <div style={{
+            fontFamily: "'Courier New', monospace", fontSize: 10, color: "#4a4",
+            lineHeight: 1.6, wordBreak: "break-all", minHeight: 36,
+            whiteSpace: "pre-wrap",
+          }}>
+            {streaming
+              ? streamPreview + "▋"
+              : <span style={{ color: "#222" }}>{"{ awaiting response... }"}</span>}
+          </div>
         </div>
+
+        {!streaming && (
+          <div style={{ marginTop: 32, display: "flex", gap: 6, justifyContent: "center" }}>
+            {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", opacity: 0.3, animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
+          </div>
+        )}
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}`}</style>
     </div>
@@ -1111,6 +1142,39 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
   );
 }
 
+// ─── SSE STREAM READER ────────────────────────────────────────────────────────
+// Module-level so both App (main generation) and Page2 (Beyond Profit) can use it.
+async function readAnthropicStream(res, onChunk) {
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") continue;
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+          text += evt.delta.text;
+          onChunk?.(text);
+        }
+      } catch { /* ignore malformed SSE lines */ }
+    }
+  }
+  return text;
+}
+
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
 
@@ -1142,6 +1206,8 @@ export default function App() {
   const [beyondProfitData, setBeyondProfitData] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [streamedChars, setStreamedChars] = useState(0);
+  const [streamPreview, setStreamPreview] = useState("");
 
   // ── Auth state ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(null);
@@ -1256,37 +1322,6 @@ export default function App() {
     await saveChassis(parsed, tier, input, bpSelections, currentLang);
   };
 
-  // ── SSE stream reader — accumulates Anthropic text_delta events ──────────
-  const readAnthropicStream = async (res) => {
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let text = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") continue;
-        try {
-          const evt = JSON.parse(payload);
-          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
-            text += evt.delta.text;
-          }
-        } catch { /* ignore malformed SSE lines */ }
-      }
-    }
-    return text;
-  };
-
   // ── Core generation logic ─────────────────────────────────────────────────
   const runGeneration = async (input, tier, currentLang, bpSelections) => {
     try {
@@ -1304,7 +1339,13 @@ export default function App() {
           messages: [{ role: "user", content: buildChassisUserMessage(input, tier, currentLang) }],
         }),
       });
-      const raw = await readAnthropicStream(res);
+      setStreamedChars(0);
+      setStreamPreview("");
+      const raw = await readAnthropicStream(res, (accumulated) => {
+        setStreamedChars(accumulated.length);
+        // Show last 120 chars of the raw stream as a live terminal preview
+        setStreamPreview(accumulated.slice(-120));
+      });
       const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
       if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
       const parsed = JSON.parse(raw.slice(f, l + 1));
@@ -1397,7 +1438,7 @@ export default function App() {
       <Modals />
     </>
   );
-  if (screen === "loading") return <LoadingScreen input={userInput} tierLabel={selectedTier?.label} t={t}/>;
+  if (screen === "loading") return <LoadingScreen input={userInput} tierLabel={selectedTier?.label} t={t} streamedChars={streamedChars} streamPreview={streamPreview} />;
   if (screen === "error") return (
     <>
       <div style={{ minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column", fontFamily:"'Georgia',serif" }}>
