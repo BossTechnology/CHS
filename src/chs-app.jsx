@@ -1142,6 +1142,39 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
   );
 }
 
+// ─── SSE STREAM READER ────────────────────────────────────────────────────────
+// Module-level so both App (main generation) and Page2 (Beyond Profit) can use it.
+async function readAnthropicStream(res, onChunk) {
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") continue;
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+          text += evt.delta.text;
+          onChunk?.(text);
+        }
+      } catch { /* ignore malformed SSE lines */ }
+    }
+  }
+  return text;
+}
+
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
 
@@ -1287,38 +1320,6 @@ export default function App() {
     }
 
     await saveChassis(parsed, tier, input, bpSelections, currentLang);
-  };
-
-  // ── SSE stream reader — accumulates Anthropic text_delta events ──────────
-  const readAnthropicStream = async (res, onChunk) => {
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let text = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") continue;
-        try {
-          const evt = JSON.parse(payload);
-          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
-            text += evt.delta.text;
-            onChunk?.(text);
-          }
-        } catch { /* ignore malformed SSE lines */ }
-      }
-    }
-    return text;
   };
 
   // ── Core generation logic ─────────────────────────────────────────────────
