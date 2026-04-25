@@ -3,7 +3,7 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-async function creditTokens(userId, totalTokens, purchaseId) {
+async function creditTokens(purchase) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
   const headers = {
@@ -16,7 +16,7 @@ async function creditTokens(userId, totalTokens, purchaseId) {
   const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/credit_tokens`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ p_user_id: userId, p_amount: totalTokens }),
+    body: JSON.stringify({ p_user_id: purchase.user_id, p_amount: purchase.total_tokens }),
   });
 
   if (!rpcRes.ok) {
@@ -24,7 +24,7 @@ async function creditTokens(userId, totalTokens, purchaseId) {
   }
 
   // Mark pending_purchase as fulfilled
-  await fetch(`${supabaseUrl}/rest/v1/pending_purchases?id=eq.${purchaseId}`, {
+  await fetch(`${supabaseUrl}/rest/v1/pending_purchases?id=eq.${purchase.id}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({ fulfilled_at: new Date().toISOString() }),
@@ -88,7 +88,7 @@ export default async function handler(req) {
 
     const purchase = records[0];
     try {
-      await creditTokens(purchase.user_id, purchase.total_tokens, purchaseId);
+      await creditTokens(purchase);
       console.log(`Credited ${purchase.total_tokens} tokens to user ${purchase.user_id}`);
     } catch (err) {
       console.error("Failed to credit tokens:", err.message);
