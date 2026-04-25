@@ -3,41 +3,28 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-async function creditTokens(purchase) {
+// Atomic, idempotent fulfillment via single Postgres function.
+// See supabase/migrations/002_idempotent_fulfillment.sql.
+async function fulfillPurchase(purchaseId) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
-  const headers = {
-    "Content-Type": "application/json",
-    apikey: serviceKey,
-    Authorization: `Bearer ${serviceKey}`,
-  };
 
-  // Atomic credit via RPC (bypasses RLS with service key)
-  const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/credit_tokens`, {
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/fulfill_purchase`, {
     method: "POST",
-    headers,
-    body: JSON.stringify({ p_user_id: purchase.user_id, p_amount: purchase.total_tokens }),
+    headers: {
+      "Content-Type": "application/json",
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ p_purchase_id: purchaseId }),
   });
 
-  if (!rpcRes.ok) {
-    throw new Error(`credit_tokens RPC failed: ${await rpcRes.text()}`);
+  if (!res.ok) {
+    throw new Error(`fulfill_purchase RPC failed: ${await res.text()}`);
   }
 
-  // Mark pending_purchase as fulfilled
-  await fetch(`${supabaseUrl}/rest/v1/pending_purchases?id=eq.${purchase.id}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ fulfilled_at: new Date().toISOString() }),
-  });
-
-  // Atomically increment promo code uses_count if one was used
-  if (purchase.promo_code) {
-    await fetch(`${supabaseUrl}/rest/v1/rpc/increment_promo_uses`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ p_code: purchase.promo_code }),
-    }).catch(() => {}); // non-critical — don't fail the whole webhook
-  }
+  const rows = await res.json();
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
 export default async function handler(req) {
@@ -68,30 +55,17 @@ export default async function handler(req) {
       return new Response("OK", { status: 200 });
     }
 
-    // Look up the pending purchase
-    const lookupRes = await fetch(
-      `${process.env.VITE_SUPABASE_URL}/rest/v1/pending_purchases?id=eq.${purchaseId}&fulfilled_at=is.null&select=*`,
-      {
-        headers: {
-          apikey: process.env.SUPABASE_SERVICE_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
-        },
-      }
-    );
-
-    const records = await lookupRes.json();
-    if (!records || records.length === 0) {
-      // Already fulfilled or not found — idempotent, return 200
-      console.warn(`pending_purchase not found or already fulfilled: ${purchaseId}`);
-      return new Response("OK", { status: 200 });
-    }
-
-    const purchase = records[0];
     try {
-      await creditTokens(purchase);
-      console.log(`Credited ${purchase.total_tokens} tokens to user ${purchase.user_id}`);
+      const result = await fulfillPurchase(purchaseId);
+      if (!result || result.status === "not_found") {
+        console.warn(`pending_purchase not found: ${purchaseId}`);
+      } else if (result.status === "already_fulfilled") {
+        console.log(`Purchase ${purchaseId} already fulfilled (idempotent retry); skipping`);
+      } else if (result.status === "credited") {
+        console.log(`Credited ${result.credited} tokens via purchase ${purchaseId}`);
+      }
     } catch (err) {
-      console.error("Failed to credit tokens:", err.message);
+      console.error("Failed to fulfill purchase:", err.message);
       return new Response("Internal error", { status: 500 });
     }
   }
