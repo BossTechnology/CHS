@@ -225,11 +225,12 @@ export function buildBeyondProfitUserMessage(
 
   const optionNames = selectedOptions.map(o => BP_FULL_NAMES[o] || o).join(", ");
   const t = tier as unknown as Record<string, string>;
-  const itemCount =
-    t.id === "compact" ? "2-3"
-    : t.id === "midsize" ? "3-4"
-    : t.id === "executive" ? "4-5"
-    : "5-6";
+
+  // Scale items per section down when many initiatives are selected to stay
+  // within the 8192 output-token limit: 5 initiatives × 5 sections × N items.
+  const baseCount = t.id === "compact" ? 2 : t.id === "midsize" ? 3 : t.id === "executive" ? 4 : 5;
+  const scaled = Math.max(2, Math.round(baseCount / Math.sqrt(selectedOptions.length)));
+  const itemCount = scaled === 2 ? "2" : `${scaled - 1}-${scaled}`;
 
   const optionBlocks = selectedOptions.map(opt => {
     const fullName = BP_FULL_NAMES[opt] || opt;
