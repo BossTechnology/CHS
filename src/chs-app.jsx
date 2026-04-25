@@ -696,6 +696,20 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
   const [openSections, setOpenSections] = useState({});
   const toggleSection = (key) => setOpenSections(p => ({ ...p, [key]: !p[key] }));
 
+  if (bpError) return (
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: pad }}>
+      <div style={{ borderBottom: "3px solid #000", paddingBottom: 24, marginBottom: 36 }}>
+        <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.02em" }}>Beyond Profit</h2>
+      </div>
+      <p style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "#888", marginBottom: 16 }}>{t.bp?.errorMsg || "Could not generate Beyond Profit insights."} {bpError}</p>
+      {onRetry && (
+        <button onClick={onRetry} style={{ padding: "10px 24px", background: "#000", color: "#fff", border: "none", borderRadius: 2, fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", cursor: "pointer" }}>
+          RETRY
+        </button>
+      )}
+    </div>
+  );
+
   if (bpLoading || !bpData) return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: pad }}>
       <div style={{ borderBottom: "3px solid #000", paddingBottom: 24, marginBottom: 36 }}>
@@ -716,20 +730,6 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
         </div>
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}`}</style>
-    </div>
-  );
-
-  if (bpError) return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: pad }}>
-      <div style={{ borderBottom: "3px solid #000", paddingBottom: 24, marginBottom: 36 }}>
-        <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.02em" }}>Beyond Profit</h2>
-      </div>
-      <p style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "#888", marginBottom: 16 }}>{t.bp?.errorMsg || "Could not generate Beyond Profit insights."} {bpError}</p>
-      {onRetry && (
-        <button onClick={onRetry} style={{ padding: "10px 24px", background: "#000", color: "#fff", border: "none", borderRadius: 2, fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", cursor: "pointer" }}>
-          RETRY
-        </button>
-      )}
     </div>
   );
 
