@@ -885,28 +885,42 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
   const collapseAll = () => { const all={}; currentKeys.forEach(s=>all[`${activeTab}-${s}`]=false); setOpenSections(p=>({...p,...all})); };
 
   const handlePDF = () => {
+    // HTML-escape every model-derived string before inlining it into the document.
+    // The "PDF" is in fact an HTML document opened in a new window, so unescaped
+    // model output (vulnerable to prompt injection of `<script>` tags) would
+    // execute in the browser context, not just render statically in a PDF.
+    const esc = (v) => {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+
     const date = new Date().toLocaleDateString();
-    const metaLine = [business.location, business.established ? `EST. ${business.established}` : null, business.type?.toUpperCase(), tier?.label?.toUpperCase()].filter(Boolean).join(" · ");
+    const metaLine = esc([business.location, business.established ? `EST. ${business.established}` : null, business.type?.toUpperCase(), tier?.label?.toUpperCase()].filter(Boolean).join(" · "));
 
     const rowsHTML = (items, isBlips) => (items || []).map((row, i) => `
       <tr style="background:${i%2===0?'#fff':'#f8f8f8'}">
-        <td style="padding:5px 8px;font-weight:700;font-size:10px;border-bottom:1px solid #eee">${row.item||''}</td>
-        ${isBlips ? `<td style="padding:5px 8px;color:#000;font-weight:700;font-family:monospace;font-size:9px;border-bottom:1px solid #eee">${row.source||'—'}</td>` : ''}
-        <td style="padding:5px 8px;color:#555;font-style:italic;font-size:10px;border-bottom:1px solid #eee">${row.type||''}</td>
-        <td style="padding:5px 8px;color:#333;font-size:10px;border-bottom:1px solid #eee;line-height:1.4">${row.description||''}</td>
-        <td style="padding:5px 8px;font-size:9px;border-bottom:1px solid #eee;white-space:nowrap">${row.inEx||''}</td>
-        <td style="padding:5px 8px;font-size:9px;border-bottom:1px solid #eee;white-space:nowrap">${row.env||''}</td>
-        <td style="padding:5px 8px;color:#444;font-size:10px;border-bottom:1px solid #eee;line-height:1.4">${row.data||''}</td>
+        <td style="padding:5px 8px;font-weight:700;font-size:10px;border-bottom:1px solid #eee">${esc(row.item)}</td>
+        ${isBlips ? `<td style="padding:5px 8px;color:#000;font-weight:700;font-family:monospace;font-size:9px;border-bottom:1px solid #eee">${esc(row.source) || '&mdash;'}</td>` : ''}
+        <td style="padding:5px 8px;color:#555;font-style:italic;font-size:10px;border-bottom:1px solid #eee">${esc(row.type)}</td>
+        <td style="padding:5px 8px;color:#333;font-size:10px;border-bottom:1px solid #eee;line-height:1.4">${esc(row.description)}</td>
+        <td style="padding:5px 8px;font-size:9px;border-bottom:1px solid #eee;white-space:nowrap">${esc(row.inEx)}</td>
+        <td style="padding:5px 8px;font-size:9px;border-bottom:1px solid #eee;white-space:nowrap">${esc(row.env)}</td>
+        <td style="padding:5px 8px;color:#444;font-size:10px;border-bottom:1px solid #eee;line-height:1.4">${esc(row.data)}</td>
       </tr>`).join('');
 
     const tableHTML = (key, items, isBlips) => {
       const headers = isBlips ? t.tableHeadersBlips : t.tableHeaders;
       return `
       <div style="margin-bottom:16px">
-        <div style="background:#000;color:#fff;font-family:monospace;font-size:9px;font-weight:900;letter-spacing:0.1em;padding:5px 10px">${key.toUpperCase()}</div>
+        <div style="background:#000;color:#fff;font-family:monospace;font-size:9px;font-weight:900;letter-spacing:0.1em;padding:5px 10px">${esc(key).toUpperCase()}</div>
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:#f0f0f0">
-            ${headers.map(h => `<th style="padding:5px 8px;font-size:8px;font-family:monospace;letter-spacing:0.08em;border-bottom:1px solid #ccc;text-align:left">${h.toUpperCase()}</th>`).join('')}
+            ${headers.map(h => `<th style="padding:5px 8px;font-size:8px;font-family:monospace;letter-spacing:0.08em;border-bottom:1px solid #ccc;text-align:left">${esc(h).toUpperCase()}</th>`).join('')}
           </tr></thead>
           <tbody>${rowsHTML(items, isBlips)}</tbody>
         </table>
@@ -916,27 +930,27 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
     const kbrHTML = (kbrs || []).map(area => `
       <div style="margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid #000;padding-bottom:6px;margin-bottom:8px">
-          <span style="font-size:14px">${area.icon}</span>
-          <span style="font-family:monospace;font-weight:900;font-size:11px;letter-spacing:0.1em">${area.area.toUpperCase()}</span>
+          <span style="font-size:14px">${esc(area.icon)}</span>
+          <span style="font-family:monospace;font-weight:900;font-size:11px;letter-spacing:0.1em">${esc(area.area).toUpperCase()}</span>
         </div>
         ${(area.results||[]).map(kbr => `
           <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;border-bottom:1px solid #eee;padding:7px 0">
-            <div><div style="font-weight:700;font-size:11px;margin-bottom:2px">${kbr.kbr||''}</div><div style="color:#555;font-size:10px;line-height:1.4">${kbr.description||''}</div></div>
-            <div><div style="font-family:monospace;font-size:8px;color:#888;letter-spacing:0.1em;margin-bottom:3px">${t.metric}</div><div style="font-size:10px">${kbr.metric||''}</div></div>
-            <div><div style="font-family:monospace;font-size:8px;color:#888;letter-spacing:0.1em;margin-bottom:3px">${t.target}</div><div style="font-size:10px;font-weight:700">${kbr.target||''}</div></div>
+            <div><div style="font-weight:700;font-size:11px;margin-bottom:2px">${esc(kbr.kbr)}</div><div style="color:#555;font-size:10px;line-height:1.4">${esc(kbr.description)}</div></div>
+            <div><div style="font-family:monospace;font-size:8px;color:#888;letter-spacing:0.1em;margin-bottom:3px">${esc(t.metric)}</div><div style="font-size:10px">${esc(kbr.metric)}</div></div>
+            <div><div style="font-family:monospace;font-size:8px;color:#888;letter-spacing:0.1em;margin-bottom:3px">${esc(t.target)}</div><div style="font-size:10px;font-weight:700">${esc(kbr.target)}</div></div>
           </div>`).join('')}
       </div>`).join('');
 
     const aboutHTML = (business.about||[]).map(item => `
       <div style="display:flex;border-bottom:1px solid #eee;padding:5px 0;font-size:11px">
-        <span style="font-family:monospace;font-size:9px;color:#888;min-width:120px;letter-spacing:0.05em;padding-top:1px">${item.label.toUpperCase()}</span>
-        <span>${item.value||''}</span>
+        <span style="font-family:monospace;font-size:9px;color:#888;min-width:120px;letter-spacing:0.05em;padding-top:1px">${esc(item.label).toUpperCase()}</span>
+        <span>${esc(item.value)}</span>
       </div>`).join('');
 
     const valueHTML = (business.chassisValue||[]).map(v => `
-      <div style="display:flex;gap:8px;margin-bottom:5px;font-size:11px"><span style="font-weight:900">→</span><span>${v}</span></div>`).join('');
+      <div style="display:flex;gap:8px;margin-bottom:5px;font-size:11px"><span style="font-weight:900">&rarr;</span><span>${esc(v)}</span></div>`).join('');
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>CHASS1S — ${business.name}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>CHASS1S &mdash; ${esc(business.name)}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: Georgia, serif; margin: 0; padding: 30px 36px; color: #000; background: #fff; font-size: 12px; }
@@ -952,44 +966,44 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
 <div style="border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end">
   <div>
     <div style="font-family:monospace;font-size:9px;color:#888;letter-spacing:0.15em;margin-bottom:5px">CHASS1S · BUSINESS OBSERVABILITY FRAMEWORK</div>
-    <div style="font-size:22px;font-weight:900;letter-spacing:-0.02em;margin-bottom:3px">${business.name}</div>
+    <div style="font-size:22px;font-weight:900;letter-spacing:-0.02em;margin-bottom:3px">${esc(business.name)}</div>
     <div style="font-family:monospace;font-size:9px;color:#888;letter-spacing:0.06em">${metaLine}</div>
   </div>
   <div style="font-family:monospace;font-size:9px;color:#888;text-align:right">
     <div style="margin-bottom:3px">boss.technology</div>
     <div style="margin-bottom:3px">${date}</div>
-    <div>${addisTotal} ADDIS · ${blipsTotal} BLIPS · ${kbrsTotal} KBRs</div>
-    <div>${controlledPct}% ${t.pdfControlled} · ${uncontrolledPct}% ${t.pdfUncontrolled}</div>
+    <div>${addisTotal} ADDIS &middot; ${blipsTotal} BLIPS &middot; ${kbrsTotal} KBRs</div>
+    <div>${controlledPct}% ${esc(t.pdfControlled)} &middot; ${uncontrolledPct}% ${esc(t.pdfUncontrolled)}</div>
   </div>
 </div>
 
-<div class="sec">${t.tabs.intro}</div>
-<p style="font-size:12px;line-height:1.7;color:#333;margin:0 0 20px;max-width:680px">${business.description}</p>
+<div class="sec">${esc(t.tabs.intro)}</div>
+<p style="font-size:12px;line-height:1.7;color:#333;margin:0 0 20px;max-width:680px">${esc(business.description)}</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:32px">
   <div>
-    <div class="label">${t.businessProfile}</div>
+    <div class="label">${esc(t.businessProfile)}</div>
     ${aboutHTML}
   </div>
   <div>
-    <div class="label">${t.whyChassis}</div>
-    <p style="font-size:11px;line-height:1.6;color:#333;margin:0 0 12px">${business.whyChassis}</p>
-    <div class="label" style="margin-top:12px">${t.keyValuePoints}</div>
+    <div class="label">${esc(t.whyChassis)}</div>
+    <p style="font-size:11px;line-height:1.6;color:#333;margin:0 0 12px">${esc(business.whyChassis)}</p>
+    <div class="label" style="margin-top:12px">${esc(t.keyValuePoints)}</div>
     ${valueHTML}
   </div>
 </div>
 
 <div class="pb">
-  <div class="sec">ADDIS — ${t.tabs.addisSub.toUpperCase()}</div>
+  <div class="sec">ADDIS &mdash; ${esc(t.tabs.addisSub).toUpperCase()}</div>
   ${addisKeys.map(k => tableHTML(k, addisData[k], false)).join('')}
 </div>
 
 <div class="pb">
-  <div class="sec">BLIPS — ${t.tabs.blipsSub.toUpperCase()}</div>
+  <div class="sec">BLIPS &mdash; ${esc(t.tabs.blipsSub).toUpperCase()}</div>
   ${blipsKeys.map(k => tableHTML(k, blipsData[k], true)).join('')}
 </div>
 
 <div class="pb">
-  <div class="sec">${t.kbrTitle.toUpperCase()}</div>
+  <div class="sec">${esc(t.kbrTitle).toUpperCase()}</div>
   ${kbrHTML}
 </div>
 
@@ -1005,13 +1019,13 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
         const data = beyondProfitData[opt];
         if (!data) return '';
         return '<div style="margin-bottom:20px">' +
-          '<div style="background:#000;color:#fff;font-family:monospace;font-size:10px;font-weight:900;padding:6px 12px;margin-bottom:8px">' + opt.toUpperCase() + ' — ' + (data.title||'') + '</div>' +
-          '<p style="font-size:11px;line-height:1.6;color:#333;margin:0 0 10px">' + (data.summary||'') + '</p>' +
+          '<div style="background:#000;color:#fff;font-family:monospace;font-size:10px;font-weight:900;padding:6px 12px;margin-bottom:8px">' + esc(opt).toUpperCase() + ' &mdash; ' + esc(data.title) + '</div>' +
+          '<p style="font-size:11px;line-height:1.6;color:#333;margin:0 0 10px">' + esc(data.summary) + '</p>' +
           Object.entries(bpLabels).map(([key, label]) => {
             const items = data[key] || [];
             if (!items.length) return '';
-            return '<div style="margin-bottom:8px"><div style="font-family:monospace;font-size:8px;font-weight:900;letter-spacing:0.15em;color:#888;margin-bottom:4px">' + label + '</div>' +
-              items.map((item,i) => '<div style="border-bottom:1px solid #eee;padding:4px 0;font-size:10px;background:' + (i%2===0?'#fff':'#fafafa') + '"><b>' + (item.title||'') + '</b> — ' + (item.description||'') + '</div>').join('') +
+            return '<div style="margin-bottom:8px"><div style="font-family:monospace;font-size:8px;font-weight:900;letter-spacing:0.15em;color:#888;margin-bottom:4px">' + esc(label) + '</div>' +
+              items.map((item,i) => '<div style="border-bottom:1px solid #eee;padding:4px 0;font-size:10px;background:' + (i%2===0?'#fff':'#fafafa') + '"><b>' + esc(item.title) + '</b> &mdash; ' + esc(item.description) + '</div>').join('') +
               '</div>';
           }).join('') + '</div>';
       }).join('') + '</div>';
