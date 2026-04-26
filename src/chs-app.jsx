@@ -1293,40 +1293,38 @@ export default function App() {
     setUser(null); setProfile(null); setWorkspaces([]); setCurrentWorkspace(null);
   };
 
-  // ── Save chassis to history ────────────────────────────────────────────────
-  const saveChassis = async (parsed, tier, input, bpSelections, currentLang) => {
-    const u = userRef.current;
-    if (!u) return;
-    const cost = (TIER_TOKEN_COST[tier.id] || 1) + (bpSelections.length * BP_TOKEN_COST);
-    await supabase.from("chassis_history").insert({
-      user_id: u.id,
-      workspace_id: currentWorkspace?.id || null,
-      business_name: parsed.business?.name || input,
-      business_input: input,
-      tier: tier.id,
-      tokens_consumed: cost,
-      chassis_data: parsed,
-      beyond_profit_selections: bpSelections,
-      lang: currentLang,
-    });
-  };
-
-  // ── Deduct tokens — atomic via Supabase RPC (prevents race conditions) ───────
-  const deductTokens = async (tier, bpSelections, parsed, input, currentLang) => {
+  // ── Atomic: deduct tokens AND insert history row in a single transaction ───
+  // Backed by the consume_and_save_chassis RPC (migration 003). Either both
+  // sides land or neither does, so the user can never pay tokens without a
+  // history record being persisted.
+  const consumeAndSave = async (parsed, tier, input, bpSelections, currentLang) => {
     const u = userRef.current;
     const p = profileRef.current;
-    if (!u) return;
+    if (!u) return { ok: false, reason: "no_user" };
     const cost = (TIER_TOKEN_COST[tier.id] || 1) + (bpSelections.length * BP_TOKEN_COST);
     const wsId = currentWorkspace?.id ?? null;
 
-    // Atomic deduction — SQL function uses FOR UPDATE lock to prevent double-spend
-    const { data: ok, error: rpcErr } = await supabase.rpc("deduct_tokens", {
+    const { data, error: rpcErr } = await supabase.rpc("consume_and_save_chassis", {
       p_user_id: u.id,
       p_workspace_id: wsId,
       p_amount: cost,
+      p_business_name: parsed.business?.name || input,
+      p_business_input: input,
+      p_tier: tier.id,
+      p_lang: currentLang,
+      p_chassis_data: parsed,
+      p_beyond_profit_selections: bpSelections,
     });
-    if (rpcErr) console.error("deduct_tokens RPC error:", rpcErr.message);
-    else if (ok === false) console.warn("deduct_tokens: insufficient balance at commit time");
+
+    if (rpcErr) {
+      console.error("consume_and_save_chassis RPC error:", rpcErr.message);
+      return { ok: false, reason: "rpc_error", message: rpcErr.message };
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.status !== "ok") {
+      return { ok: false, reason: row?.status || "unknown" };
+    }
 
     // Refresh local balance from DB to stay in sync
     if (wsId) {
@@ -1337,7 +1335,7 @@ export default function App() {
       if (prof) { setProfile(prof); profileRef.current = prof; }
     }
 
-    await saveChassis(parsed, tier, input, bpSelections, currentLang);
+    return { ok: true };
   };
 
   // ── Core generation logic ─────────────────────────────────────────────────
@@ -1367,9 +1365,21 @@ export default function App() {
       const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
       if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
       const parsed = JSON.parse(raw.slice(f, l + 1));
+
+      // Persist + charge atomically BEFORE rendering Page2. If this fails,
+      // the user keeps their tokens and sees an error instead of a result
+      // they were charged for but cannot retrieve from history.
+      const result = await consumeAndSave(parsed, tier, input, bpSelections, currentLang);
+      if (!result.ok) {
+        const msg =
+          result.reason === "insufficient_balance" ? "Insufficient token balance." :
+          result.reason === "not_found" ? "Account not found." :
+          result.message || "Could not save your chassis. No tokens were charged.";
+        throw new Error(msg);
+      }
+
       setChassisData(parsed);
       setScreen("page2");
-      await deductTokens(tier, bpSelections, parsed, input, currentLang);
     } catch (err) {
       setErrorMsg(`${err.message}`);
       setScreen("error");
