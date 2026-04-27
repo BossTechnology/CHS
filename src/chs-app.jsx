@@ -107,7 +107,7 @@ function CHSLogo({ height = 42 }) {
 }
 
 function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin }) {
   const { isMobile } = useResponsive();
   const [menuOpen, setMenuOpen] = useState(false);
   const authRef = useRef(null);
@@ -125,6 +125,14 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16, flexShrink: 0 }}>
           {children}
+          {/* ── Admin Button (only for admin users) ── */}
+          {profile?.role === "admin" && onOpenAdmin && (
+            <button onClick={onOpenAdmin}
+              title="Admin Panel"
+              style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", padding: "5px 12px", background: "#000", color: "#fff", border: "none", cursor: "pointer", textTransform: "uppercase" }}>
+              ADMIN
+            </button>
+          )}
           {/* ── Profile / Guest Button ── */}
           <div ref={authRef} style={{ position: "relative" }}>
             {!user ? (
@@ -181,6 +189,540 @@ function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignO
     </div>
   );
 }
+// ── Admin Panel ───────────────────────────────────────────────────────────────
+function AdminPanel({ onBack, lang, setLang, ...authProps }) {
+  const [tab, setTab] = useState("overview");
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [generations, setGenerations] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [promos, setPromos] = useState([]);
+  const [workspaceList, setWorkspaceList] = useState([]);
+  const [cacheEntries, setCacheEntries] = useState([]);
+  const [busy, setBusy] = useState({});
+  const [toast, setToast] = useState(null);
+
+  // Token adjustment
+  const [adjustEmail, setAdjustEmail] = useState("");
+  const [adjustAmt, setAdjustAmt] = useState("");
+
+  // New promo
+  const [np, setNp] = useState({ code: "", tokens: "5", max_uses: "100", expires_at: "" });
+
+  const showToast = (msg, ok = true) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const load = async (key, fn) => {
+    setBusy(b => ({ ...b, [key]: true }));
+    try { await fn(); } catch (e) { showToast(e.message, false); }
+    setBusy(b => ({ ...b, [key]: false }));
+  };
+
+  const fetchOverview = () => load("overview", async () => {
+    const { data, error } = await supabase.rpc("admin_get_stats");
+    if (error) throw new Error(error.message);
+    setStats(data);
+  });
+
+  const fetchUsers = () => load("users", async () => {
+    const { data, error } = await supabase.rpc("admin_list_users", { p_limit: 100, p_offset: 0 });
+    if (error) throw new Error(error.message);
+    setUsers(data || []);
+  });
+
+  const fetchGenerations = () => load("generations", async () => {
+    const { data, error } = await supabase.rpc("admin_list_generations", { p_limit: 100, p_offset: 0 });
+    if (error) throw new Error(error.message);
+    setGenerations(data || []);
+  });
+
+  const fetchPurchases = () => load("purchases", async () => {
+    const { data, error } = await supabase.rpc("admin_list_purchases", { p_limit: 100, p_offset: 0 });
+    if (error) throw new Error(error.message);
+    setPurchases(data || []);
+  });
+
+  const fetchPromos = () => load("promos", async () => {
+    const { data, error } = await supabase.rpc("admin_list_promos");
+    if (error) throw new Error(error.message);
+    setPromos(data || []);
+  });
+
+  const fetchWorkspaces = () => load("workspaces", async () => {
+    const { data, error } = await supabase.rpc("admin_list_workspaces");
+    if (error) throw new Error(error.message);
+    setWorkspaceList(data || []);
+  });
+
+  const fetchCache = () => load("cache", async () => {
+    const { data, error } = await supabase.rpc("admin_list_cache", { p_limit: 30 });
+    if (error) throw new Error(error.message);
+    setCacheEntries(data || []);
+  });
+
+  useEffect(() => {
+    if (tab === "overview") fetchOverview();
+    else if (tab === "users") fetchUsers();
+    else if (tab === "generations") fetchGenerations();
+    else if (tab === "purchases") fetchPurchases();
+    else if (tab === "promos") fetchPromos();
+    else if (tab === "workspaces") fetchWorkspaces();
+    else if (tab === "cache") fetchCache();
+  }, [tab]);
+
+  const handleAdjustTokens = async () => {
+    const u = users.find(x => x.email === adjustEmail.trim());
+    if (!u) return showToast("User not found", false);
+    const amt = parseFloat(adjustAmt);
+    if (isNaN(amt) || amt === 0) return showToast("Enter a valid amount", false);
+    await load("adjust", async () => {
+      const { data, error } = await supabase.rpc("admin_adjust_tokens", { p_user_id: u.id, p_amount: amt });
+      if (error) throw new Error(error.message);
+      showToast(`✓ New balance: ${data} tokens`);
+      setAdjustEmail(""); setAdjustAmt("");
+      fetchUsers();
+    });
+  };
+
+  const handleCreatePromo = async () => {
+    if (!np.code.trim() || !np.tokens || !np.max_uses) return showToast("Fill all required fields", false);
+    await load("createPromo", async () => {
+      const { error } = await supabase.rpc("admin_create_promo", {
+        p_code: np.code.trim().toUpperCase(),
+        p_bonus_tokens: parseFloat(np.tokens),
+        p_max_uses: parseInt(np.max_uses),
+        p_expires_at: np.expires_at || null,
+      });
+      if (error) throw new Error(error.message);
+      showToast("✓ Promo code created");
+      setNp({ code: "", tokens: "5", max_uses: "100", expires_at: "" });
+      fetchPromos();
+    });
+  };
+
+  const handleTogglePromo = async (code, active) => {
+    await load(`promo_${code}`, async () => {
+      const { error } = await supabase.rpc("admin_toggle_promo", { p_code: code, p_active: !active });
+      if (error) throw new Error(error.message);
+      showToast(`✓ ${code} ${!active ? "activated" : "deactivated"}`);
+      fetchPromos();
+    });
+  };
+
+  const handleClearCache = async () => {
+    if (!confirm("Delete all cache entries? This cannot be undone.")) return;
+    await load("clearCache", async () => {
+      const { data, error } = await supabase.rpc("admin_clear_cache");
+      if (error) throw new Error(error.message);
+      showToast(`✓ Deleted ${data} cache entries`);
+      fetchCache();
+      if (tab === "overview") fetchOverview();
+    });
+  };
+
+  // ── Shared styles ──
+  const S = {
+    page: { minHeight: "100vh", background: "#f8f8f8", fontFamily: "'Courier New', monospace" },
+    header: { background: "#000", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" },
+    tabs: { background: "#fff", borderBottom: "1px solid #e0e0e0", padding: "0 32px", display: "flex", gap: 0 },
+    tab: (active) => ({ padding: "14px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", background: "transparent", borderBottom: active ? "2px solid #000" : "2px solid transparent", color: active ? "#000" : "#888", textTransform: "uppercase", transition: "all 0.15s" }),
+    body: { padding: "32px", maxWidth: 1200, margin: "0 auto" },
+    card: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: 24, marginBottom: 24 },
+    kpi: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: "20px 24px", textAlign: "center" },
+    kpiVal: { fontSize: 32, fontWeight: 900, color: "#000", lineHeight: 1 },
+    kpiLabel: { fontSize: 10, color: "#888", letterSpacing: "0.12em", marginTop: 6, textTransform: "uppercase" },
+    table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
+    th: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #000", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#444" },
+    td: { padding: "10px 12px", borderBottom: "1px solid #f0f0f0", color: "#222", verticalAlign: "top" },
+    badge: (color) => ({ display: "inline-block", padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, background: color === "green" ? "#e6f4ea" : color === "red" ? "#fce8e6" : "#f0f0f0", color: color === "green" ? "#1a7340" : color === "red" ? "#c5221f" : "#555", letterSpacing: "0.08em" }),
+    input: { padding: "8px 12px", border: "1px solid #d0d0d0", fontSize: 12, fontFamily: "'Courier New', monospace", width: "100%", boxSizing: "border-box", outline: "none" },
+    btn: (variant = "primary") => ({ padding: "8px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", fontFamily: "'Courier New', monospace", textTransform: "uppercase", background: variant === "primary" ? "#000" : variant === "danger" ? "#c5221f" : "#f0f0f0", color: variant === "secondary" ? "#333" : "#fff", transition: "opacity 0.15s" }),
+    sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: 16 },
+  };
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+  const fmtNum = (n) => n != null ? Number(n).toLocaleString() : "—";
+
+  const TABS = [
+    { id: "overview", label: "Overview" },
+    { id: "users", label: "Users" },
+    { id: "generations", label: "Generations" },
+    { id: "purchases", label: "Purchases" },
+    { id: "promos", label: "Promos" },
+    { id: "workspaces", label: "Workspaces" },
+    { id: "cache", label: "Cache" },
+  ];
+
+  return (
+    <div style={S.page}>
+      {/* Header */}
+      <div style={S.header}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <button onClick={onBack} style={{ background: "none", border: "1px solid #444", color: "#aaa", padding: "6px 14px", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", fontFamily: "'Courier New', monospace" }}>← BACK</button>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 13, fontWeight: 900, color: "#fff", letterSpacing: "0.2em" }}>CHASS1S · ADMIN</span>
+        </div>
+        <span style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em" }}>{authProps.user?.email}</span>
+      </div>
+
+      {/* Tabs */}
+      <div style={S.tabs}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={S.tab(tab === t.id)}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 20px", background: toast.ok ? "#000" : "#c5221f", color: "#fff", fontSize: 12, fontFamily: "'Courier New', monospace", letterSpacing: "0.08em", zIndex: 9999, borderRadius: 2 }}>
+          {toast.msg}
+        </div>
+      )}
+
+      <div style={S.body}>
+
+        {/* ── OVERVIEW ── */}
+        {tab === "overview" && (
+          <div>
+            {busy.overview && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            {stats && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
+                  {[
+                    { val: fmtNum(stats.total_users), label: "Total Users" },
+                    { val: fmtNum(stats.total_generations), label: "Total Generations" },
+                    { val: fmtNum(stats.generations_today), label: "Today" },
+                    { val: fmtNum(stats.generations_month), label: "This Month" },
+                    { val: fmtNum(stats.tokens_consumed), label: "Tokens Consumed" },
+                    { val: fmtNum(stats.tokens_sold), label: "Tokens Sold" },
+                    { val: `$${Number(stats.revenue_usd || 0).toFixed(2)}`, label: "Revenue (USD)" },
+                    { val: fmtNum(stats.total_workspaces), label: "Workspaces" },
+                    { val: fmtNum(stats.cache_entries), label: "Cache Entries" },
+                    { val: fmtNum(stats.cache_total_hits), label: "Cache Hits" },
+                    { val: fmtNum(stats.pending_purchases), label: "Pending Purchases" },
+                  ].map(({ val, label }) => (
+                    <div key={label} style={S.kpi}>
+                      <div style={S.kpiVal}>{val}</div>
+                      <div style={S.kpiLabel}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>Generations by Tier</div>
+                    {Object.entries(stats.tier_breakdown || {}).sort((a,b) => b[1]-a[1]).map(([tier, cnt]) => (
+                      <div key={tier} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}>
+                        <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>{tier}</span>
+                        <strong>{fmtNum(cnt)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>Generations by Language</div>
+                    {Object.entries(stats.lang_breakdown || {}).sort((a,b) => b[1]-a[1]).map(([lang, cnt]) => (
+                      <div key={lang} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}>
+                        <span>{lang}</span>
+                        <strong>{fmtNum(cnt)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            <button onClick={fetchOverview} style={{ ...S.btn("secondary"), marginTop: 8 }}>↻ Refresh</button>
+          </div>
+        )}
+
+        {/* ── USERS ── */}
+        {tab === "users" && (
+          <div>
+            <div style={S.card}>
+              <div style={S.sectionTitle}>Adjust Token Balance</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, alignItems: "end" }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 4 }}>USER EMAIL</div>
+                  <input style={S.input} value={adjustEmail} onChange={e => setAdjustEmail(e.target.value)} placeholder="user@email.com" list="user-emails" />
+                  <datalist id="user-emails">{users.map(u => <option key={u.id} value={u.email} />)}</datalist>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 4 }}>AMOUNT (±)</div>
+                  <input style={{ ...S.input, width: 120 }} value={adjustAmt} onChange={e => setAdjustAmt(e.target.value)} placeholder="+10 or -5" type="number" />
+                </div>
+                <button onClick={handleAdjustTokens} disabled={busy.adjust} style={S.btn("primary")}>
+                  {busy.adjust ? "…" : "Apply"}
+                </button>
+              </div>
+            </div>
+
+            {busy.users && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={S.sectionTitle}>{fmtNum(users.length)} Users</div>
+                <button onClick={fetchUsers} style={S.btn("secondary")}>↻ Refresh</button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>Email</th>
+                    <th style={S.th}>Tokens</th>
+                    <th style={S.th}>Role</th>
+                    <th style={S.th}>Generations</th>
+                    <th style={S.th}>Last Gen</th>
+                    <th style={S.th}>Joined</th>
+                  </tr></thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td style={S.td}>{u.email}</td>
+                        <td style={S.td}><strong>{Number(u.token_balance).toFixed(2)}</strong></td>
+                        <td style={S.td}>
+                          <span style={S.badge(u.role === "admin" ? "green" : "default")}>{u.role}</span>
+                        </td>
+                        <td style={S.td}>{fmtNum(u.generation_count)}</td>
+                        <td style={S.td}>{fmtDate(u.last_generation)}</td>
+                        <td style={S.td}>{fmtDate(u.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── GENERATIONS ── */}
+        {tab === "generations" && (
+          <div>
+            {busy.generations && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={S.sectionTitle}>{fmtNum(generations.length)} Recent Generations</div>
+                <button onClick={fetchGenerations} style={S.btn("secondary")}>↻ Refresh</button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>Business</th>
+                    <th style={S.th}>User</th>
+                    <th style={S.th}>Tier</th>
+                    <th style={S.th}>Lang</th>
+                    <th style={S.th}>Tokens</th>
+                    <th style={S.th}>BP</th>
+                    <th style={S.th}>Date</th>
+                  </tr></thead>
+                  <tbody>
+                    {generations.map(g => (
+                      <tr key={g.id}>
+                        <td style={S.td}>{g.business_name || "—"}</td>
+                        <td style={S.td} title={g.user_email}>{(g.user_email || "—").split("@")[0]}</td>
+                        <td style={S.td}><span style={S.badge("default")}>{g.tier}</span></td>
+                        <td style={S.td}>{g.lang}</td>
+                        <td style={S.td}>{Number(g.tokens_consumed).toFixed(2)}</td>
+                        <td style={S.td}>{g.has_beyond_profit ? <span style={S.badge("green")}>YES</span> : "—"}</td>
+                        <td style={S.td}>{fmtDate(g.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PURCHASES ── */}
+        {tab === "purchases" && (
+          <div>
+            {busy.purchases && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={S.sectionTitle}>{fmtNum(purchases.length)} Purchases</div>
+                <button onClick={fetchPurchases} style={S.btn("secondary")}>↻ Refresh</button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>User</th>
+                    <th style={S.th}>Amount USD</th>
+                    <th style={S.th}>Tokens</th>
+                    <th style={S.th}>Promo</th>
+                    <th style={S.th}>Status</th>
+                    <th style={S.th}>Created</th>
+                    <th style={S.th}>Fulfilled</th>
+                  </tr></thead>
+                  <tbody>
+                    {purchases.map(p => (
+                      <tr key={p.id}>
+                        <td style={S.td} title={p.user_email}>{(p.user_email || "—").split("@")[0]}</td>
+                        <td style={S.td}>${Number(p.amount_usd).toFixed(2)}</td>
+                        <td style={S.td}>{fmtNum(p.total_tokens)}</td>
+                        <td style={S.td}>{p.promo_code || "—"}</td>
+                        <td style={S.td}>
+                          <span style={S.badge(p.fulfilled_at ? "green" : "red")}>
+                            {p.fulfilled_at ? "CREDITED" : "PENDING"}
+                          </span>
+                        </td>
+                        <td style={S.td}>{fmtDate(p.created_at)}</td>
+                        <td style={S.td}>{fmtDate(p.fulfilled_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PROMOS ── */}
+        {tab === "promos" && (
+          <div>
+            <div style={S.card}>
+              <div style={S.sectionTitle}>Create Promo Code</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 8, alignItems: "end" }}>
+                {[
+                  { label: "CODE", key: "code", placeholder: "SUMMER25" },
+                  { label: "BONUS TOKENS", key: "tokens", placeholder: "5" },
+                  { label: "MAX USES", key: "max_uses", placeholder: "100" },
+                  { label: "EXPIRES (optional)", key: "expires_at", placeholder: "", type: "date" },
+                ].map(({ label, key, placeholder, type }) => (
+                  <div key={key}>
+                    <div style={{ fontSize: 10, color: "#888", marginBottom: 4 }}>{label}</div>
+                    <input style={S.input} type={type || "text"} value={np[key]} placeholder={placeholder}
+                      onChange={e => setNp(p => ({ ...p, [key]: e.target.value }))} />
+                  </div>
+                ))}
+                <button onClick={handleCreatePromo} disabled={busy.createPromo} style={S.btn("primary")}>
+                  {busy.createPromo ? "…" : "Create"}
+                </button>
+              </div>
+            </div>
+
+            {busy.promos && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={S.sectionTitle}>Promo Codes</div>
+                <button onClick={fetchPromos} style={S.btn("secondary")}>↻ Refresh</button>
+              </div>
+              <table style={S.table}>
+                <thead><tr>
+                  <th style={S.th}>Code</th>
+                  <th style={S.th}>Bonus Tokens</th>
+                  <th style={S.th}>Uses</th>
+                  <th style={S.th}>Max Uses</th>
+                  <th style={S.th}>Expires</th>
+                  <th style={S.th}>Status</th>
+                  <th style={S.th}>Action</th>
+                </tr></thead>
+                <tbody>
+                  {promos.map(p => (
+                    <tr key={p.code}>
+                      <td style={S.td}><strong>{p.code}</strong></td>
+                      <td style={S.td}>{fmtNum(p.bonus_tokens)}</td>
+                      <td style={S.td}>{fmtNum(p.uses_count)}</td>
+                      <td style={S.td}>{fmtNum(p.max_uses)}</td>
+                      <td style={S.td}>{fmtDate(p.expires_at)}</td>
+                      <td style={S.td}><span style={S.badge(p.active ? "green" : "red")}>{p.active ? "ACTIVE" : "INACTIVE"}</span></td>
+                      <td style={S.td}>
+                        <button onClick={() => handleTogglePromo(p.code, p.active)}
+                          disabled={busy[`promo_${p.code}`]}
+                          style={{ ...S.btn(p.active ? "danger" : "secondary"), padding: "4px 12px", fontSize: 10 }}>
+                          {p.active ? "Deactivate" : "Activate"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── WORKSPACES ── */}
+        {tab === "workspaces" && (
+          <div>
+            {busy.workspaces && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={S.sectionTitle}>{fmtNum(workspaceList.length)} Workspaces</div>
+                <button onClick={fetchWorkspaces} style={S.btn("secondary")}>↻ Refresh</button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>Name</th>
+                    <th style={S.th}>Owner</th>
+                    <th style={S.th}>Token Balance</th>
+                    <th style={S.th}>Members</th>
+                    <th style={S.th}>Created</th>
+                  </tr></thead>
+                  <tbody>
+                    {workspaceList.map(w => (
+                      <tr key={w.id}>
+                        <td style={S.td}><strong>{w.name}</strong></td>
+                        <td style={S.td}>{w.owner_email || "—"}</td>
+                        <td style={S.td}>{Number(w.token_balance).toFixed(2)}</td>
+                        <td style={S.td}>{fmtNum(w.member_count)}</td>
+                        <td style={S.td}>{fmtDate(w.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CACHE ── */}
+        {tab === "cache" && (
+          <div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+              <button onClick={fetchCache} style={S.btn("secondary")}>↻ Refresh</button>
+              <button onClick={handleClearCache} disabled={busy.clearCache} style={S.btn("danger")}>
+                {busy.clearCache ? "…" : "🗑 Clear All Cache"}
+              </button>
+            </div>
+            {busy.cache && <div style={{ color: "#888", fontSize: 12, marginBottom: 16 }}>Loading…</div>}
+            <div style={S.card}>
+              <div style={S.sectionTitle}>Top {cacheEntries.length} Cached Entries (by hits)</div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>Input</th>
+                    <th style={S.th}>Tier</th>
+                    <th style={S.th}>Lang</th>
+                    <th style={S.th}>Hits</th>
+                    <th style={S.th}>Cached</th>
+                    <th style={S.th}>Last Hit</th>
+                  </tr></thead>
+                  <tbody>
+                    {cacheEntries.map(c => (
+                      <tr key={c.id}>
+                        <td style={{ ...S.td, maxWidth: 320 }} title={c.input_text}>
+                          {c.input_text?.slice(0, 80)}{c.input_text?.length > 80 ? "…" : ""}
+                        </td>
+                        <td style={S.td}><span style={S.badge("default")}>{c.tier_id}</span></td>
+                        <td style={S.td}>{c.lang}</td>
+                        <td style={S.td}><strong>{fmtNum(c.hit_count)}</strong></td>
+                        <td style={S.td}>{fmtDate(c.created_at)}</td>
+                        <td style={S.td}>{fmtDate(c.last_hit_at)}</td>
+                      </tr>
+                    ))}
+                    {cacheEntries.length === 0 && !busy.cache && (
+                      <tr><td colSpan={6} style={{ ...S.td, textAlign: "center", color: "#aaa", padding: 32 }}>No cache entries yet</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 function AppFooter({ t }) {
   const { isMobile } = useResponsive();
   return (
@@ -1545,6 +2087,7 @@ export default function App() {
     onCreateWorkspace: () => setWorkspaceCreateOpen(true),
     onOpenHistory: () => setHistoryOpen(true),
     onBuyTokens: () => setBuyTokensOpen(true),
+    onOpenAdmin: profile?.role === "admin" ? () => setScreen("admin") : undefined,
   };
 
   const Modals = () => (
@@ -1598,6 +2141,9 @@ export default function App() {
         {...authProps} />
       <Modals />
     </>
+  );
+  if (screen === "admin" && profile?.role === "admin") return (
+    <AdminPanel onBack={() => setScreen("page1")} lang={lang} setLang={setLang} {...authProps} />
   );
   return null;
 }
