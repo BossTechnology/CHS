@@ -2,7 +2,7 @@ export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
 import { withNewRelic, nrLog } from './_newrelic.js'
 
-const _rawAppUrl = process.env.VITE_APP_URL || "";
+const _rawAppUrl = (process.env.VITE_APP_URL || "").trim();
 // Guard: must start with https:// — otherwise fall back to the canonical URL
 const ALLOWED_ORIGIN = _rawAppUrl.startsWith("https://")
   ? _rawAppUrl.replace(/\/$/, "")   // strip trailing slash
