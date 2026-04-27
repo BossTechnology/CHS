@@ -1,5 +1,6 @@
 export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
+import { withNewRelic, nrLog } from './_newrelic.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
@@ -50,7 +51,7 @@ async function verifyJWT(token) {
   return data?.id ? data : null;
 }
 
-export default async function handler(req) {
+export default withNewRelic("create-purchase", async function handler(req) {
   const origin = req.headers.get("origin") || "";
   const appUrl = process.env.VITE_APP_URL || "https://chass1s.com";
   const corsHeaders = {
@@ -126,7 +127,7 @@ export default async function handler(req) {
 
   if (!insertRes.ok) {
     const err = await insertRes.text();
-    console.error("pending_purchases insert failed:", err);
+    nrLog(`pending_purchases insert failed: ${err}`, "error", { handler: "create-purchase" });
     return new Response(JSON.stringify({ error: "Failed to create purchase record" }), {
       status: 500, headers: corsHeaders,
     });
@@ -164,7 +165,7 @@ export default async function handler(req) {
   if (!sessionRes.ok) {
     const err = await sessionRes.json().catch(() => ({}));
     const stripeMsg = err?.error?.message || JSON.stringify(err);
-    console.error("Stripe session creation failed:", stripeMsg);
+    nrLog(`Stripe session creation failed: ${stripeMsg}`, "error", { handler: "create-purchase" });
     return new Response(JSON.stringify({ error: `Payment session error: ${stripeMsg}` }), {
       status: 500, headers: corsHeaders,
     });
@@ -176,4 +177,4 @@ export default async function handler(req) {
     status: 200,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
-}
+});

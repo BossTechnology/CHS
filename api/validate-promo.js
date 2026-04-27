@@ -1,5 +1,6 @@
 export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
+import { withNewRelic } from './_newrelic.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
@@ -15,7 +16,7 @@ async function verifyJWT(token) {
   return data?.id ? data : null;
 }
 
-export default async function handler(req) {
+export default withNewRelic("validate-promo", async function handler(req) {
   const origin = req.headers.get("origin") || "";
   const corsHeaders = {
     "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : "",
@@ -80,4 +81,4 @@ export default async function handler(req) {
     status: 200,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
-}
+});

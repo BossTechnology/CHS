@@ -1,5 +1,6 @@
 export const config = { runtime: 'edge' };
 import Stripe from "stripe";
+import { withNewRelic, nrLog } from './_newrelic.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -27,7 +28,7 @@ async function fulfillPurchase(purchaseId) {
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
-export default async function handler(req) {
+export default withNewRelic("stripe-webhook", async function handler(req) {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
@@ -42,7 +43,7 @@ export default async function handler(req) {
   try {
     event = await stripe.webhooks.constructEventAsync(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Stripe webhook signature verification failed:", err.message);
+    nrLog(`Stripe webhook signature verification failed: ${err.message}`, "error", { handler: "stripe-webhook" });
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
@@ -51,24 +52,24 @@ export default async function handler(req) {
     const purchaseId = session.client_reference_id;
 
     if (!purchaseId) {
-      console.error("checkout.session.completed missing client_reference_id");
+      nrLog("checkout.session.completed missing client_reference_id", "error", { handler: "stripe-webhook" });
       return new Response("OK", { status: 200 });
     }
 
     try {
       const result = await fulfillPurchase(purchaseId);
       if (!result || result.status === "not_found") {
-        console.warn(`pending_purchase not found: ${purchaseId}`);
+        nrLog(`pending_purchase not found: ${purchaseId}`, "warn", { handler: "stripe-webhook", purchaseId });
       } else if (result.status === "already_fulfilled") {
-        console.log(`Purchase ${purchaseId} already fulfilled (idempotent retry); skipping`);
+        nrLog(`Purchase ${purchaseId} already fulfilled (idempotent retry)`, "info", { handler: "stripe-webhook", purchaseId });
       } else if (result.status === "credited") {
-        console.log(`Credited ${result.credited} tokens via purchase ${purchaseId}`);
+        nrLog(`Credited ${result.credited} tokens via purchase ${purchaseId}`, "info", { handler: "stripe-webhook", purchaseId, credited: result.credited });
       }
     } catch (err) {
-      console.error("Failed to fulfill purchase:", err.message);
+      nrLog(`Failed to fulfill purchase: ${err.message}`, "error", { handler: "stripe-webhook", purchaseId });
       return new Response("Internal error", { status: 500 });
     }
   }
 
   return new Response("OK", { status: 200 });
-}
+});
