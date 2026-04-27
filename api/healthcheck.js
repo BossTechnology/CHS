@@ -1,4 +1,5 @@
 export const config = { runtime: 'edge' };
+import { withNewRelic } from './_newrelic.js'
 
 // Constant-time string comparison to prevent timing attacks
 function safeEqual(a, b) {
@@ -8,7 +9,7 @@ function safeEqual(a, b) {
   return mismatch === 0;
 }
 
-export default async function handler(req) {
+export default withNewRelic("healthcheck", async function handler(req) {
   // Require HEALTHCHECK_SECRET via header. The endpoint exists so ops can probe
   // env-var/api-key health without exposing infra details to anonymous visitors.
   const expected = process.env.HEALTHCHECK_SECRET;
@@ -70,4 +71,4 @@ export default async function handler(req) {
     status: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
-}
+});
