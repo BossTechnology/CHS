@@ -13,6 +13,69 @@ const supabase = (() => {
   let _session: SupabaseSession | null = null;
   let _listeners: Listener[] = [];
 
+  // ── Cross-tab token refresh coordination ───────────────────────────────────
+  // Prevents multiple tabs from racing on the same refresh_token (which is
+  // single-use — whichever tab wins invalidates the token for all others).
+  let _refreshPromise: Promise<SupabaseResponse<{ session: SupabaseSession }>> | null = null;
+  const LOCK_KEY      = "chs_refresh_lock";
+  const LOCK_TTL_MS   = 8_000; // max time another tab can hold the lock
+  const LOCK_POLL_MS  = 150;   // how often we poll while waiting
+  const LOCK_WAIT_MAX = 9_000; // give up waiting after this long
+
+  // BroadcastChannel — lets the winning tab push the new session to all others
+  // without any extra network round-trip.
+  const _bc = (() => {
+    try { return new BroadcastChannel("chs_session"); } catch { return null; }
+  })();
+
+  const _bcBroadcast = (session: SupabaseSession | null) => {
+    try { _bc?.postMessage({ type: "SESSION_UPDATED", session }); } catch {}
+  };
+
+  if (_bc) {
+    _bc.onmessage = (ev) => {
+      if (ev.data?.type !== "SESSION_UPDATED") return;
+      const session: SupabaseSession | null = ev.data.session;
+      _session = session;
+      if (session) {
+        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(session)));
+      } else {
+        _tryLS(() => localStorage.removeItem("chs_sess"));
+      }
+      _notify(session);
+    };
+  }
+
+  /** Acquire a cross-tab lock. Returns true if we own it, false if timed out. */
+  const _acquireLock = (): boolean => {
+    const token = `${Date.now()}_${Math.random()}`;
+    _tryLS(() => localStorage.setItem(LOCK_KEY, JSON.stringify({ token, at: Date.now() })));
+    // Read back to confirm we wrote it (no built-in CAS in localStorage, but
+    // this is "good enough" — true atomicity requires SharedArrayBuffer/Atomics).
+    const stored = _tryLS(() => JSON.parse(localStorage.getItem(LOCK_KEY) || "null") as { token: string; at: number } | null);
+    return stored?.token === token;
+  };
+
+  const _releaseLock = () => _tryLS(() => localStorage.removeItem(LOCK_KEY));
+
+  const _lockHeld = (): boolean => {
+    const stored = _tryLS(() => JSON.parse(localStorage.getItem(LOCK_KEY) || "null") as { token: string; at: number } | null);
+    if (!stored) return false;
+    return Date.now() - stored.at < LOCK_TTL_MS;
+  };
+
+  /** Wait until no other tab holds the refresh lock, then return true.
+   *  Returns false if we wait longer than LOCK_WAIT_MAX. */
+  const _waitForLock = (): Promise<boolean> => new Promise((resolve) => {
+    const deadline = Date.now() + LOCK_WAIT_MAX;
+    const poll = () => {
+      if (!_lockHeld()) { resolve(true); return; }
+      if (Date.now() >= deadline) { resolve(false); return; }
+      setTimeout(poll, LOCK_POLL_MS);
+    };
+    poll();
+  });
+
   const _tryLS = <T>(fn: () => T, fallback: T | null = null): T | null => {
     try { return fn(); } catch { return fallback; }
   };
@@ -113,32 +176,75 @@ const supabase = (() => {
     },
 
     async refreshSession(): Promise<SupabaseResponse<{ session: SupabaseSession }>> {
-      const refreshToken = _session?.refresh_token;
-      if (!refreshToken) {
-        _session = null;
-        _tryLS(() => localStorage.removeItem("chs_sess"));
-        _notify(null);
-        return { data: null, error: { message: "No refresh token" } };
-      }
-      try {
-        const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", apikey: SUPA_KEY },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-        const data = await res.json() as SupabaseSession & { error_description?: string };
-        if (!res.ok) {
-          _session = null;
-          _tryLS(() => localStorage.removeItem("chs_sess"));
-          _notify(null);
-          return { data: null, error: { message: data.error_description || "Token refresh failed" } };
+      // ── Within-tab deduplication ─────────────────────────────────────────
+      // If this tab is already mid-refresh, return the same promise so callers
+      // share one network round-trip instead of spawning independent ones.
+      if (_refreshPromise) return _refreshPromise;
+
+      _refreshPromise = (async (): Promise<SupabaseResponse<{ session: SupabaseSession }>> => {
+        try {
+          // ── Cross-tab coordination ───────────────────────────────────────
+          // If another tab is currently refreshing, wait for it to finish, then
+          // re-read the session it stored in localStorage instead of calling
+          // the token endpoint again (which would invalidate the new token).
+          if (_lockHeld()) {
+            const released = await _waitForLock();
+            if (released) {
+              // Another tab finished — pick up its session.
+              const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null") as SupabaseSession | null);
+              if (stored && stored.refresh_token !== _session?.refresh_token) {
+                // Genuinely new session from the other tab.
+                _session = stored;
+                _notify(_session);
+                return { data: { session: _session }, error: null };
+              }
+            }
+            // Lock never released (crashed tab?) — fall through and try ourselves.
+          }
+
+          const refreshToken = _session?.refresh_token;
+          if (!refreshToken) {
+            _session = null;
+            _tryLS(() => localStorage.removeItem("chs_sess"));
+            _notify(null);
+            return { data: null, error: { message: "No refresh token" } };
+          }
+
+          // Acquire the cross-tab lock before hitting the network.
+          _acquireLock();
+
+          try {
+            const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", apikey: SUPA_KEY },
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+            const data = await res.json() as SupabaseSession & { error_description?: string };
+            if (!res.ok) {
+              _session = null;
+              _tryLS(() => localStorage.removeItem("chs_sess"));
+              _notify(null);
+              _bcBroadcast(null);
+              return { data: null, error: { message: data.error_description || "Token refresh failed" } };
+            }
+            _session = _normalizeSession(data);
+            _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+            _notify(_session);
+            // Tell all other tabs about the new session so they don't refresh again.
+            _bcBroadcast(_session);
+            return { data: { session: _session }, error: null };
+          } finally {
+            _releaseLock();
+          }
+        } catch (e) {
+          return { data: null, error: { message: (e as Error).message } };
         }
-        _session = _normalizeSession(data);
-        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
-        _notify(_session);
-        return { data: { session: _session }, error: null };
-      } catch (e) {
-        return { data: null, error: { message: (e as Error).message } };
+      })();
+
+      try {
+        return await _refreshPromise;
+      } finally {
+        _refreshPromise = null;
       }
     },
 
