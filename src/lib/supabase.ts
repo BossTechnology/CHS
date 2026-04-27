@@ -182,15 +182,35 @@ const supabase = (() => {
 
     // Called once on app boot — reads the OAuth hash fragment Supabase puts in
     // the URL after a successful provider redirect (access_token, refresh_token…)
+    // Also handles error cases (user cancelled, provider error, etc.) by storing
+    // a human-readable message in sessionStorage for the app to display.
     handleOAuthCallback(): boolean {
       if (typeof window === "undefined") return false;
       const hash = window.location.hash.slice(1);
       if (!hash) return false;
       const params = new URLSearchParams(hash);
-      const access_token = params.get("access_token");
+
+      // ── Error path: provider returned an error ──────────────────────────
+      const error = params.get("error");
+      if (error) {
+        const desc = params.get("error_description") || error;
+        // Humanize the most common cases
+        const message =
+          error === "access_denied"
+            ? "Sign-in was cancelled. You can try again anytime."
+            : desc.replace(/\+/g, " ");
+        // Store for the App component to pick up and display
+        _tryLS(() => sessionStorage.setItem("chs_oauth_error", message));
+        // Clean the hash without a page reload
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        return false;
+      }
+
+      // ── Success path ────────────────────────────────────────────────────
+      const access_token  = params.get("access_token");
       const refresh_token = params.get("refresh_token");
-      const expires_in = params.get("expires_in");
-      const token_type = params.get("token_type");
+      const expires_in    = params.get("expires_in");
+      const token_type    = params.get("token_type");
       if (!access_token || !refresh_token) return false;
 
       // Fetch the user object with the new token
