@@ -2,7 +2,11 @@ export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
 import { withNewRelic, nrLog } from './_newrelic.js'
 
-const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
+const _rawAppUrl = process.env.VITE_APP_URL || "";
+// Guard: must start with https:// — otherwise fall back to the canonical URL
+const ALLOWED_ORIGIN = _rawAppUrl.startsWith("https://")
+  ? _rawAppUrl.replace(/\/$/, "")   // strip trailing slash
+  : "https://www.chass1s.com";
 
 function getVolumeBonus(amt) {
   if (amt >= 500) return 0.30;
@@ -53,7 +57,7 @@ async function verifyJWT(token) {
 
 export default withNewRelic("create-purchase", async function handler(req) {
   const origin = req.headers.get("origin") || "";
-  const appUrl = process.env.VITE_APP_URL || "https://chass1s.com";
+  const appUrl = ALLOWED_ORIGIN;
   const corsHeaders = {
     "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : "",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
