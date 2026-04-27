@@ -1879,63 +1879,35 @@ export default function App() {
     return { ok: true };
   };
 
-  // ── Semantic cache helpers ────────────────────────────────────────────────
-  // Fetches an embedding for the input text via /api/embed (OpenAI).
-  // Returns null if the embed endpoint is unavailable or unconfigured —
-  // callers treat null as "skip cache" gracefully.
-  const getEmbedding = async (text, sessionToken) => {
-    try {
-      const res = await fetch("/api/embed", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data?.embedding ?? null; // null when OPENAI_API_KEY not configured
-    } catch {
-      return null;
-    }
-  };
+  // ── Trigram cache helpers (pg_trgm — no external API) ───────────────────
+  // Normalize input before storing/querying so minor formatting differences
+  // (extra spaces, trailing commas, mixed case) don't create duplicate entries.
+  const normalizeInput = (text) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
-  // Cosine distance between two vectors (lower = more similar).
-  const cosineDist = (a, b) => {
-    let dot = 0, na = 0, nb = 0;
-    for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] ** 2; nb += b[i] ** 2; }
-    return 1 - dot / (Math.sqrt(na) * Math.sqrt(nb));
-  };
-
-  // Query Supabase for a cached chassis result near the query embedding.
-  // Returns { id, chassis_data } or null.
-  const lookupCache = async (embedding, tierId, currentLang) => {
+  // Query Supabase for a similar cached chassis result (similarity > 0.65).
+  // Returns { id, chassis_data } or null on miss / error.
+  const lookupCache = async (input, tierId, currentLang) => {
     try {
       const { data, error } = await supabase.rpc("lookup_chassis_cache", {
-        p_embedding: embedding,
+        p_input_text: normalizeInput(input),
         p_tier_id: tierId,
         p_lang: currentLang,
-        p_threshold: 0.07,
+        p_threshold: 0.65,
       });
-      if (error || !data || !data.length) return null;
-      const row = data[0];
-      // Apply distance threshold in JS (IVFFlat returns best match regardless)
-      if (cosineDist(embedding, row.embedding ?? []) > 0.07) return null;
-      return { id: row.id, chassis_data: row.chassis_data };
+      if (error || !data?.length) return null;
+      return { id: data[0].id, chassis_data: data[0].chassis_data };
     } catch {
       return null;
     }
   };
 
-  // Persist a new embedding + result to the cache (fire-and-forget).
-  const storeCache = async (embedding, input, tierId, currentLang, chassisData) => {
+  // Persist a new result to the cache (fire-and-forget, non-blocking).
+  const storeCache = async (input, tierId, currentLang, chassisData) => {
     try {
       await supabase.rpc("insert_chassis_cache", {
-        p_input_text: input,
+        p_input_text: normalizeInput(input),
         p_tier_id: tierId,
         p_lang: currentLang,
-        p_embedding: embedding,
         p_chassis_data: chassisData,
       });
     } catch {
@@ -1949,33 +1921,17 @@ export default function App() {
       const { data: { session: genSession } } = await supabase.auth.getSession();
       const sessionToken = genSession?.access_token;
 
-      // ── Semantic cache check ────────────────────────────────────────────
-      // Non-blocking: any failure here just falls through to live generation.
+      // ── Trigram cache check (no external API) ──────────────────────────
       let cachedResult = null;
-      let queryEmbedding = null;
       try {
-        queryEmbedding = await getEmbedding(input, sessionToken);
-        if (queryEmbedding) {
-          // lookup_chassis_cache returns top-1; we apply cosine_distance in JS
-          const { data: cacheRows } = await supabase.rpc("lookup_chassis_cache", {
-            p_embedding: queryEmbedding,
-            p_tier_id: tier.id,
-            p_lang: currentLang,
-            p_threshold: 0.07,
-          });
-          if (cacheRows?.length) {
-            const row = cacheRows[0];
-            // row doesn't include the embedding vector (bandwidth), so we
-            // trust the ORDER BY distance already returned the nearest match.
-            // Accept if within threshold (Supabase returns distance in metadata
-            // when using <=> operator — we rely on the index being tight enough).
-            cachedResult = row.chassis_data;
-            // Increment hit counter (fire-and-forget)
-            supabase.rpc("record_cache_hit", { p_cache_id: row.id }).catch(() => {});
-          }
+        const hit = await lookupCache(input, tier.id, currentLang);
+        if (hit) {
+          cachedResult = hit.chassis_data;
+          // Increment hit counter (fire-and-forget)
+          supabase.rpc("record_cache_hit", { p_cache_id: hit.id }).catch(() => {});
         }
       } catch {
-        // Cache lookup failure is non-fatal — proceed to live generation
+        // Cache lookup failure is non-fatal — fall through to live generation
       }
 
       let parsed;
@@ -1983,7 +1939,7 @@ export default function App() {
         // ── Cache HIT: use cached result, still charge tokens ───────────
         parsed = cachedResult;
         setStreamedChars(0);
-        setStreamPreview("⚡ Retrieved from semantic cache");
+        setStreamPreview("⚡ Retrieved from cache");
       } else {
         // ── Cache MISS: call Anthropic ──────────────────────────────────
         const res = await fetch("/api/anthropic", {
@@ -2009,9 +1965,7 @@ export default function App() {
         parsed = JSON.parse(raw.slice(f, l + 1));
 
         // Store in cache for future hits (fire-and-forget, non-blocking)
-        if (queryEmbedding) {
-          storeCache(queryEmbedding, input, tier.id, currentLang, parsed).catch(() => {});
-        }
+        storeCache(input, tier.id, currentLang, parsed).catch(() => {});
       }
 
       // Persist + charge atomically BEFORE rendering Page2. If this fails,
