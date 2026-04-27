@@ -806,7 +806,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
 
 // ─── PAGE 1 ───────────────────────────────────────────────────────────────────
 function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, popupBlocked }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, onOpenAdmin, popupBlocked }) {
   const t = T[lang];
   const tiers = getTiers(lang);
   const { isMobile, isTablet } = useResponsive();
@@ -860,7 +860,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
   return (
     <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#fff", display: "flex", flexDirection: "column" }}>
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} />
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} />
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "32px 20px" : isTablet ? "48px 32px" : "60px 48px" }}>
         <div style={{ width: "100%", maxWidth: 800, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 32 : 48 }}>
@@ -1354,7 +1354,7 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
 
 // ─── PAGE 2 ───────────────────────────────────────────────────────────────────
 function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyondProfitData, setBeyondProfitData, userInput, onNewChassis, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin }) {
   const t = T[lang];
   const { isMobile, isTablet } = useResponsive();
   const [activeTab, setActiveTab] = useState("intro");
@@ -1609,7 +1609,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
     <div style={{ fontFamily:"'Georgia',serif", minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column" }}>
       {/* Shared Header — identical to Page 1 */}
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory}>
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin}>
         <button onClick={handlePDF}
           className="no-print"
           title="Download PDF"
