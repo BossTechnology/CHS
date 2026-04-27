@@ -36,7 +36,9 @@ function WorkspaceMembersModal({ workspace, user, userRole, onClose }) {
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setLoading(true); setError(""); setSuccess("");
-    const { data: p } = await supabase.from("profiles").select("id,email").eq("email", inviteEmail.trim().toLowerCase()).single();
+    const { data: lookup, error: lookupErr } = await supabase.rpc("lookup_profile_by_email", { p_email: inviteEmail.trim() });
+    if (lookupErr) { setError(lookupErr.message); setLoading(false); return; }
+    const p = Array.isArray(lookup) ? lookup[0] : lookup;
     if (!p?.id) { setError("No CHASS1S account found with that email. Ask them to sign up first."); setLoading(false); return; }
     const { data: existing } = await supabase.from("workspace_members").select("id").eq("workspace_id", workspace.id).eq("user_id", p.id).single();
     if (existing?.id) { setError("That user is already a member of this workspace."); setLoading(false); return; }
