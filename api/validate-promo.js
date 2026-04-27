@@ -2,7 +2,10 @@ export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
 import { withNewRelic } from './_newrelic.js'
 
-const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
+const _rawAppUrl = (process.env.VITE_APP_URL || "").trim();
+const ALLOWED_ORIGIN = _rawAppUrl.startsWith("https://")
+  ? _rawAppUrl.replace(/\/$/, "")
+  : "https://www.chass1s.com";
 
 async function verifyJWT(token) {
   const res = await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/user`, {
