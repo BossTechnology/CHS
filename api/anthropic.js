@@ -1,5 +1,6 @@
 export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
+import { withNewRelic } from './_newrelic.js'
 
 const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
 
@@ -21,7 +22,7 @@ async function verifySupabaseJWT(token) {
   return data?.id ? data : null;
 }
 
-export default async function handler(req) {
+export default withNewRelic("anthropic", async function handler(req) {
   const origin = req.headers.get("origin") || "";
 
   if (req.method === "OPTIONS") {
@@ -125,4 +126,4 @@ export default async function handler(req) {
       headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
     });
   }
-}
+});

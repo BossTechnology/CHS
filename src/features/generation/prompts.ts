@@ -162,13 +162,6 @@ Be highly specific to this exact business type. Return ONLY the JSON object.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Legacy export kept for any callers not yet migrated (will be removed later)
-// ─────────────────────────────────────────────────────────────────────────────
-export function buildPrompt(userInput: string, tier: Tier, lang: LangCode): string {
-  return buildChassisSystemBlocks()[0].text + "\n\n" + buildChassisUserMessage(userInput, tier, lang);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Beyond Profit — static system prompt (cached)
 // ─────────────────────────────────────────────────────────────────────────────
 const BEYOND_PROFIT_SYSTEM_STATIC = `You are a business observability and corporate responsibility expert.
@@ -262,13 +255,3 @@ ${optionBlocks}
 Return ONLY the JSON object.`;
 }
 
-// Legacy export
-export function buildBeyondProfitPrompt(
-  userInput: string,
-  tier: Tier,
-  lang: LangCode,
-  selectedOptions: BeyondProfitKey[]
-): string {
-  return buildBeyondProfitSystemBlocks()[0].text + "\n\n" +
-    buildBeyondProfitUserMessage(userInput, tier, lang, selectedOptions);
-}
