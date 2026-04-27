@@ -1767,6 +1767,14 @@ export default function App() {
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [streamedChars, setStreamedChars] = useState(0);
   const [streamPreview, setStreamPreview] = useState("");
+  const [oauthError, setOauthError] = useState(() => {
+    // Pick up any OAuth error stored by handleOAuthCallback() on redirect
+    try {
+      const msg = sessionStorage.getItem("chs_oauth_error");
+      if (msg) { sessionStorage.removeItem("chs_oauth_error"); return msg; }
+    } catch {}
+    return null;
+  });
 
   // ── Auth state ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(null);
@@ -2063,10 +2071,29 @@ export default function App() {
     </>
   );
 
+  // ── OAuth error toast (shown once after a failed/cancelled OAuth redirect) ──
+  const OAuthErrorToast = oauthError ? (
+    <div style={{
+      position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+      background: "#1a1a1a", color: "#fff", padding: "12px 20px 12px 16px",
+      borderRadius: 4, fontSize: 13, fontFamily: "'Courier New', monospace",
+      display: "flex", alignItems: "center", gap: 12, zIndex: 9999,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.3)", maxWidth: "90vw",
+    }}>
+      <span style={{ color: "#f87171" }}>⚠</span>
+      <span>{oauthError}</span>
+      <button onClick={() => setOauthError(null)} style={{
+        background: "none", border: "none", color: "#888", cursor: "pointer",
+        fontSize: 16, lineHeight: 1, padding: "0 0 0 4px", flexShrink: 0,
+      }}>×</button>
+    </div>
+  ) : null;
+
   if (screen === "page1") return (
     <>
       <Page1 onSubmit={generateChassis} lang={lang} setLang={setLang} popupBlocked={popupBlocked} {...authProps} />
       <Modals />
+      {OAuthErrorToast}
     </>
   );
   if (screen === "loading") return <LoadingScreen input={userInput} tierLabel={selectedTier?.label} t={t} streamedChars={streamedChars} streamPreview={streamPreview} />;
