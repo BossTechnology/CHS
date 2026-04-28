@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { LANGUAGES } from "../../i18n/translations.js";
 import { TokenPurchaseModal } from "../billing/TokenPurchaseModal.jsx";
 import { WorkspaceMembersModal } from "../workspace/WorkspaceMembersModal.jsx";
+import { LangDropdown } from "../../shared/ui/LangDropdown.jsx";
 
 function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang, setLang,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory }) {
@@ -146,18 +146,10 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
 
       {/* Language selector */}
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #e8e8e8" }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.12em", marginBottom: 8 }}>LANGUAGE</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {LANGUAGES.map(l => (
-            <button key={l.code} onClick={() => setLang(l.code)}
-              style={{ padding: "4px 9px", border: l.code === lang ? "2px solid #000" : "1px solid #d0d0d0",
-                background: l.code === lang ? "#000" : "#fff", color: l.code === lang ? "#fff" : "#888",
-                fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
-                cursor: "pointer", borderRadius: 2, transition: "all 0.15s" }}>
-              {l.code}
-            </button>
-          ))}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
+            letterSpacing: "0.12em" }}>LANGUAGE</span>
+          <LangDropdown lang={lang} setLang={setLang} />
         </div>
       </div>
 
