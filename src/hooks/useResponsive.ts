@@ -7,9 +7,13 @@ export function useResponsive(): ResponsiveState {
   );
 
   useEffect(() => {
-    const handler = () => setWidth(window.innerWidth);
+    let timeout: ReturnType<typeof setTimeout>;
+    const handler = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setWidth(window.innerWidth), 100);
+    };
     window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    return () => { window.removeEventListener("resize", handler); clearTimeout(timeout); };
   }, []);
 
   return {
