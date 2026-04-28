@@ -791,7 +791,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
         </div>
 
         {/* Checkboxes row */}
-        <div style={{ display: "flex", gap: isMobile ? 10 : 20, flexWrap: isMobile ? "wrap" : "nowrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: isMobile ? 8 : 20, flexWrap: "nowrap", alignItems: "center", overflowX: "auto" }}>
           {Object.keys(t.bpOptions).map(opt => {
             const isChecked = beyondProfitSelections.includes(opt);
             return (
@@ -954,9 +954,6 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
                 onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); handleFabricateClick(); } }}
                 rows={4} style={{ width: "100%", padding: "18px 20px", fontFamily: "'Georgia', serif", fontSize: 15, color: "#000", border: "none", outline: "none", resize: "none", background: "transparent", lineHeight: 1.7, boxSizing: "border-box", position: "relative", zIndex: 2 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-              <span style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#aaa", letterSpacing: "0.08em" }}>{t.deployHint}</span>
-            </div>
           </div>
 
 
@@ -981,9 +978,9 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
           <button onClick={handleFabricateClick}
             disabled={!input.trim() || (user && !hasEnoughTokens)}
             style={{
-              width: "100%", padding: "16px 32px", border: "none", borderRadius: 2,
-              fontFamily: "'Courier New', monospace", fontSize: 13, fontWeight: 900,
-              letterSpacing: "0.2em", transition: "all 0.2s",
+              width: "100%", padding: isMobile ? "14px 16px" : "16px 32px", border: "none", borderRadius: 2,
+              fontFamily: "'Courier New', monospace", fontSize: isMobile ? 11 : 13, fontWeight: 900,
+              letterSpacing: isMobile ? "0.08em" : "0.15em", transition: "all 0.2s", whiteSpace: "nowrap",
               background: !input.trim() ? "#e8e8e8" : !user ? "#000" : hasEnoughTokens ? "#000" : "#e8e8e8",
               color: !input.trim() ? "#aaa" : !user ? "#fff" : hasEnoughTokens ? "#fff" : "#aaa",
               cursor: !input.trim() || (user && !hasEnoughTokens) ? "not-allowed" : "pointer",
@@ -997,33 +994,24 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
 
           {/* ── Auth / Token nudge messages ── */}
           {!user && input.trim() && (
-            <div style={{ width: "100%", marginTop: 12, padding: "16px 20px",
+            <div style={{ width: "100%", marginTop: 12, padding: "14px 16px",
               background: "#f8f8f8", border: "1px solid #e0e0e0", borderRadius: 2,
-              display: "flex", flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "flex-start" : "center",
-              justifyContent: "space-between", gap: 12 }}>
-              <div>
-                <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900,
-                  color: "#000", letterSpacing: "0.08em", marginBottom: 4 }}>
-                  AN ACCOUNT IS REQUIRED TO GENERATE A CHASSIS
-                </div>
-                <div style={{ fontFamily: "'Georgia', serif", fontSize: 13, color: "#666", lineHeight: 1.6 }}>
-                  All new accounts receive <strong style={{ color: "#000" }}>10 free tokens</strong> — no credit card required.
-                  That's enough for a Compact or Mid-Size Chassis right away.
-                </div>
-              </div>
+              display: "flex", flexDirection: "row", alignItems: "center",
+              justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#666",
+                letterSpacing: "0.06em" }}>{t.auth?.freeTokens}</span>
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button onClick={() => onOpenAuth("signup")}
-                  style={{ padding: "9px 18px", background: "#000", color: "#fff", border: "none",
-                    fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900,
-                    letterSpacing: "0.1em", cursor: "pointer", whiteSpace: "nowrap", borderRadius: 2 }}>
-                  CREATE ACCOUNT
+                  style={{ padding: "8px 14px", background: "#000", color: "#fff", border: "none",
+                    fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
+                    letterSpacing: "0.08em", cursor: "pointer", whiteSpace: "nowrap", borderRadius: 2 }}>
+                  {t.auth?.signUpTab}
                 </button>
                 <button onClick={() => onOpenAuth("signin")}
-                  style={{ padding: "9px 18px", background: "#fff", color: "#000",
-                    border: "1px solid #000", fontFamily: "'Courier New', monospace", fontSize: 11,
-                    fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", whiteSpace: "nowrap", borderRadius: 2 }}>
-                  SIGN IN
+                  style={{ padding: "8px 14px", background: "#fff", color: "#000",
+                    border: "1px solid #000", fontFamily: "'Courier New', monospace", fontSize: 10,
+                    fontWeight: 700, letterSpacing: "0.08em", cursor: "pointer", whiteSpace: "nowrap", borderRadius: 2 }}>
+                  {t.auth?.signInTab}
                 </button>
               </div>
             </div>
