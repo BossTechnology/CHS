@@ -827,6 +827,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
   const [typedExample, setTypedExample] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const typingRef = useRef(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (focused || input) return;
@@ -883,7 +884,6 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
               (() => {
                 const sliderIdx = tiers.findIndex(t => t.id === selectedTierId);
                 const tier = tiers[sliderIdx];
-                const touchStartX = useRef(null);
                 const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
                 const handleTouchEnd = (e) => {
                   if (touchStartX.current === null) return;
