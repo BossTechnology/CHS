@@ -34,7 +34,14 @@ test.describe('Smoke — página principal', () => {
   });
 
   test('healthcheck responde 200 con stack OK', async ({ request }) => {
-    const res = await request.get('/api/healthcheck');
+    const secret = process.env.HEALTHCHECK_SECRET;
+    if (!secret) {
+      test.skip(true, 'HEALTHCHECK_SECRET no configurado — saltando test de healthcheck');
+      return;
+    }
+    const res = await request.get('/api/healthcheck', {
+      headers: { 'x-healthcheck-secret': secret },
+    });
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body.ANTHROPIC_API_KEY).toBe(true);

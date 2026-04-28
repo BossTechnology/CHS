@@ -33,7 +33,7 @@ const SECTION_ICONS = {
 };
 
 const TIER_TOKEN_COST = { compact: 3, midsize: 5, executive: 10, luxury: 25 };
-const BP_TOKEN_COST = 0.25;
+const BP_TOKEN_COST = 1;
 
 
 
@@ -106,7 +106,7 @@ function CHSLogo({ height = 42 }) {
   );
 }
 
-function AppHeader({ lang, setLang, children, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
+function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin }) {
   const { isMobile } = useResponsive();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -199,7 +199,7 @@ function AdminPanel({ onBack, lang, setLang, ...authProps }) {
   const [promos, setPromos] = useState([]);
   const [workspaceList, setWorkspaceList] = useState([]);
   const [cacheEntries, setCacheEntries] = useState([]);
-  const [busy, setBusy] = useState({});
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState(null);
 
   // Token adjustment
@@ -229,37 +229,37 @@ function AdminPanel({ onBack, lang, setLang, ...authProps }) {
   const fetchUsers = () => load("users", async () => {
     const { data, error } = await supabase.rpc("admin_list_users", { p_limit: 100, p_offset: 0 });
     if (error) throw new Error(error.message);
-    setUsers(data || []);
+    setUsers((data as any[]) || []);
   });
 
   const fetchGenerations = () => load("generations", async () => {
     const { data, error } = await supabase.rpc("admin_list_generations", { p_limit: 100, p_offset: 0 });
     if (error) throw new Error(error.message);
-    setGenerations(data || []);
+    setGenerations((data as any[]) || []);
   });
 
   const fetchPurchases = () => load("purchases", async () => {
     const { data, error } = await supabase.rpc("admin_list_purchases", { p_limit: 100, p_offset: 0 });
     if (error) throw new Error(error.message);
-    setPurchases(data || []);
+    setPurchases((data as any[]) || []);
   });
 
   const fetchPromos = () => load("promos", async () => {
     const { data, error } = await supabase.rpc("admin_list_promos");
     if (error) throw new Error(error.message);
-    setPromos(data || []);
+    setPromos((data as any[]) || []);
   });
 
   const fetchWorkspaces = () => load("workspaces", async () => {
     const { data, error } = await supabase.rpc("admin_list_workspaces");
     if (error) throw new Error(error.message);
-    setWorkspaceList(data || []);
+    setWorkspaceList((data as any[]) || []);
   });
 
   const fetchCache = () => load("cache", async () => {
     const { data, error } = await supabase.rpc("admin_list_cache", { p_limit: 30 });
     if (error) throw new Error(error.message);
-    setCacheEntries(data || []);
+    setCacheEntries((data as any[]) || []);
   });
 
   useEffect(() => {
@@ -324,22 +324,22 @@ function AdminPanel({ onBack, lang, setLang, ...authProps }) {
 
   // ── Shared styles ──
   const S = {
-    page: { minHeight: "100vh", background: "#f8f8f8", fontFamily: "'Courier New', monospace" },
-    header: { background: "#000", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" },
-    tabs: { background: "#fff", borderBottom: "1px solid #e0e0e0", padding: "0 32px", display: "flex", gap: 0 },
-    tab: (active) => ({ padding: "14px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", background: "transparent", borderBottom: active ? "2px solid #000" : "2px solid transparent", color: active ? "#000" : "#888", textTransform: "uppercase", transition: "all 0.15s" }),
-    body: { padding: "32px", maxWidth: 1200, margin: "0 auto" },
-    card: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: 24, marginBottom: 24 },
-    kpi: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: "20px 24px", textAlign: "center" },
-    kpiVal: { fontSize: 32, fontWeight: 900, color: "#000", lineHeight: 1 },
-    kpiLabel: { fontSize: 10, color: "#888", letterSpacing: "0.12em", marginTop: 6, textTransform: "uppercase" },
-    table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
-    th: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #000", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#444" },
-    td: { padding: "10px 12px", borderBottom: "1px solid #f0f0f0", color: "#222", verticalAlign: "top" },
-    badge: (color) => ({ display: "inline-block", padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, background: color === "green" ? "#e6f4ea" : color === "red" ? "#fce8e6" : "#f0f0f0", color: color === "green" ? "#1a7340" : color === "red" ? "#c5221f" : "#555", letterSpacing: "0.08em" }),
-    input: { padding: "8px 12px", border: "1px solid #d0d0d0", fontSize: 12, fontFamily: "'Courier New', monospace", width: "100%", boxSizing: "border-box", outline: "none" },
-    btn: (variant = "primary") => ({ padding: "8px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", fontFamily: "'Courier New', monospace", textTransform: "uppercase", background: variant === "primary" ? "#000" : variant === "danger" ? "#c5221f" : "#f0f0f0", color: variant === "secondary" ? "#333" : "#fff", transition: "opacity 0.15s" }),
-    sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: 16 },
+    page: { minHeight: "100vh", background: "#f8f8f8", fontFamily: "'Courier New', monospace" } as React.CSSProperties,
+    header: { background: "#000", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" } as React.CSSProperties,
+    tabs: { background: "#fff", borderBottom: "1px solid #e0e0e0", padding: "0 32px", display: "flex", gap: 0 } as React.CSSProperties,
+    tab: (active: boolean): React.CSSProperties => ({ padding: "14px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", background: "transparent", borderBottom: active ? "2px solid #000" : "2px solid transparent", color: active ? "#000" : "#888", textTransform: "uppercase", transition: "all 0.15s" }),
+    body: { padding: "32px", maxWidth: 1200, margin: "0 auto" } as React.CSSProperties,
+    card: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: 24, marginBottom: 24 } as React.CSSProperties,
+    kpi: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 4, padding: "20px 24px", textAlign: "center" } as React.CSSProperties,
+    kpiVal: { fontSize: 32, fontWeight: 900, color: "#000", lineHeight: 1 } as React.CSSProperties,
+    kpiLabel: { fontSize: 10, color: "#888", letterSpacing: "0.12em", marginTop: 6, textTransform: "uppercase" } as React.CSSProperties,
+    table: { width: "100%", borderCollapse: "collapse", fontSize: 12 } as React.CSSProperties,
+    th: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #000", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#444" } as React.CSSProperties,
+    td: { padding: "10px 12px", borderBottom: "1px solid #f0f0f0", color: "#222", verticalAlign: "top" } as React.CSSProperties,
+    badge: (color: string): React.CSSProperties => ({ display: "inline-block", padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, background: color === "green" ? "#e6f4ea" : color === "red" ? "#fce8e6" : "#f0f0f0", color: color === "green" ? "#1a7340" : color === "red" ? "#c5221f" : "#555", letterSpacing: "0.08em" }),
+    input: { padding: "8px 12px", border: "1px solid #d0d0d0", fontSize: 12, fontFamily: "'Courier New', monospace", width: "100%", boxSizing: "border-box", outline: "none" } as React.CSSProperties,
+    btn: (variant = "primary"): React.CSSProperties => ({ padding: "8px 20px", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", border: "none", fontFamily: "'Courier New', monospace", textTransform: "uppercase", background: variant === "primary" ? "#000" : variant === "danger" ? "#c5221f" : "#f0f0f0", color: variant === "secondary" ? "#333" : "#fff", transition: "opacity 0.15s" }),
+    sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: 16 } as React.CSSProperties,
   };
 
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -412,7 +412,7 @@ function AdminPanel({ onBack, lang, setLang, ...authProps }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                   <div style={S.card}>
                     <div style={S.sectionTitle}>Generations by Tier</div>
-                    {Object.entries(stats.tier_breakdown || {}).sort((a,b) => b[1]-a[1]).map(([tier, cnt]) => (
+                    {Object.entries(stats.tier_breakdown || {}).sort((a,b) => (b[1] as number)-(a[1] as number)).map(([tier, cnt]) => (
                       <div key={tier} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}>
                         <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>{tier}</span>
                         <strong>{fmtNum(cnt)}</strong>
@@ -421,7 +421,7 @@ function AdminPanel({ onBack, lang, setLang, ...authProps }) {
                   </div>
                   <div style={S.card}>
                     <div style={S.sectionTitle}>Generations by Language</div>
-                    {Object.entries(stats.lang_breakdown || {}).sort((a,b) => b[1]-a[1]).map(([lang, cnt]) => (
+                    {Object.entries(stats.lang_breakdown || {}).sort((a,b) => (b[1] as number)-(a[1] as number)).map(([lang, cnt]) => (
                       <div key={lang} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}>
                         <span>{lang}</span>
                         <strong>{fmtNum(cnt)}</strong>
@@ -752,7 +752,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
       <div style={{ padding: "16px 20px", border: "1px solid #e0e0e0", borderRadius: 2 }}>
 
         {/* Title row with (i) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
           <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900, letterSpacing: "0.15em", color: "#000" }}>
             {t.beyondProfit}
           </span>
@@ -770,19 +770,28 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
               i
             </button>
             {tooltipOpen && (
-              <div style={{ position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", background: "#fff", border: "1px solid #000", borderRadius: 2, padding: "12px 16px", width: 260, zIndex: 200, boxShadow: "0 4px 20px rgba(0,0,0,0.12)" }}>
+              <div style={{ position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", background: "#fff", border: "1px solid #000", borderRadius: 2, padding: "12px 16px", width: 280, zIndex: 200, boxShadow: "0 4px 20px rgba(0,0,0,0.12)" }}>
                 {/* Arrow */}
-                <div style={{ position: "absolute", top: -6, left: "50%", transform: "translateX(-50%)", width: 10, height: 10, background: "#fff", border: "1px solid #000", borderBottom: "none", borderRight: "none", transform: "translateX(-50%) rotate(45deg)" }} />
-                <p style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#333", lineHeight: 1.7, margin: 0, letterSpacing: "0.03em" }}>
-                  {t.beyondProfitDesc}
-                </p>
+                <div style={{ position: "absolute", top: -6, left: "50%", width: 10, height: 10, background: "#fff", border: "1px solid #000", borderBottom: "none", borderRight: "none", transform: "translateX(-50%) rotate(45deg)" }} />
+                <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#333", lineHeight: 2, margin: 0, letterSpacing: "0.03em" }}>
+                  {Object.keys(t.bpDefinitions || {}).map(key => (
+                    <div key={key} style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 4, marginBottom: 4 }}>
+                      {t.bpDefinitions[key]}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+
+          {/* 1 TOKEN PER label */}
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#888", fontWeight: 700, letterSpacing: "0.08em", marginLeft: 2 }}>
+            {t.tokensPer || "1 TOKEN PER"}
+          </span>
         </div>
 
         {/* Checkboxes row */}
-        <div style={{ display: "flex", gap: isMobile ? 10 : 20, flexWrap: "nowrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: isMobile ? 10 : 20, flexWrap: isMobile ? "wrap" : "nowrap", alignItems: "center" }}>
           {Object.keys(t.bpOptions).map(opt => {
             const isChecked = beyondProfitSelections.includes(opt);
             return (
@@ -980,10 +989,10 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
               cursor: !input.trim() || (user && !hasEnoughTokens) ? "not-allowed" : "pointer",
             }}>
             {!user
-              ? t.startBtn
+              ? `${t.useTokens || "USE"} ${tokenCost} TOKENS & ${t.startBtn}`
               : !hasEnoughTokens
                 ? `INSUFFICIENT TOKENS — ${tokenCost % 1 === 0 ? tokenCost : tokenCost.toFixed(2)} REQUIRED`
-                : t.startBtn}
+                : `${t.useTokens || "USE"} ${tokenCost} TOKENS & ${t.startBtn}`}
           </button>
 
           {/* ── Auth / Token nudge messages ── */}
@@ -999,7 +1008,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
                   AN ACCOUNT IS REQUIRED TO GENERATE A CHASSIS
                 </div>
                 <div style={{ fontFamily: "'Georgia', serif", fontSize: 13, color: "#666", lineHeight: 1.6 }}>
-                  All new accounts receive <strong style={{ color: "#000" }}>5 free tokens</strong> — no credit card required.
+                  All new accounts receive <strong style={{ color: "#000" }}>10 free tokens</strong> — no credit card required.
                   That's enough for a Compact or Mid-Size Chassis right away.
                 </div>
               </div>
@@ -1402,11 +1411,11 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
     };
     generate();
   }, []);
-  const { business, addis, blips, kbrs } = chassisData;
+  const { business, addis, blips, kbrs } = chassisData as any;
   const addisKeys = ["Apps","Data","Dev","Infrastructure","Systems"];
   const blipsKeys = ["BizOps","Logistics","Inventory","Production","Sales"];
-  const addisData = {}; addisKeys.forEach(k => { addisData[k] = (addis||{})[k]||[]; });
-  const blipsData = {}; blipsKeys.forEach(k => { blipsData[k] = (blips||{})[k]||[]; });
+  const addisData: Record<string, any[]> = {}; addisKeys.forEach(k => { addisData[k] = (addis||{})[k]||[]; });
+  const blipsData: Record<string, any[]> = {}; blipsKeys.forEach(k => { blipsData[k] = (blips||{})[k]||[]; });
   const addisTotal = Object.values(addisData).reduce((s,a)=>s+a.length,0);
   const blipsTotal = Object.values(blipsData).reduce((s,a)=>s+a.length,0);
   const kbrsTotal = (kbrs||[]).reduce((s,a)=>s+(a.results||[]).length,0);
@@ -1703,7 +1712,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
 
 // ─── SSE STREAM READER ────────────────────────────────────────────────────────
 // Module-level so both App (main generation) and Page2 (Beyond Profit) can use it.
-async function readAnthropicStream(res, onChunk) {
+async function readAnthropicStream(res, onChunk?: (accumulated: string) => void) {
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(`API error: ${res.status} — ${errBody.error || errBody.message || "unknown"}`);
@@ -1712,6 +1721,7 @@ async function readAnthropicStream(res, onChunk) {
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
+  let messageStopReceived = false;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -1721,15 +1731,27 @@ async function readAnthropicStream(res, onChunk) {
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
       const payload = line.slice(6).trim();
-      if (payload === "[DONE]") continue;
+      if (payload === "[DONE]") { messageStopReceived = true; continue; }
       try {
         const evt = JSON.parse(payload);
+        if (evt.type === "error") {
+          throw new Error(evt.error?.message || `Anthropic stream error: ${evt.error?.type || "unknown"}`);
+        }
+        if (evt.type === "message_stop") {
+          messageStopReceived = true;
+        }
         if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
           text += evt.delta.text;
           onChunk?.(text);
         }
-      } catch { /* ignore malformed SSE lines */ }
+      } catch (parseErr) {
+        if (parseErr.message.startsWith("Anthropic stream error")) throw parseErr;
+        // ignore other malformed SSE lines
+      }
     }
+  }
+  if (!messageStopReceived && text.length === 0) {
+    throw new Error("El stream se cerró sin contenido — posible timeout o sobrecarga del modelo.");
   }
   return text;
 }
@@ -1742,8 +1764,8 @@ export default function App() {
 
   // ── Viewport meta ──────────────────────────────────────────────────────────
   useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!meta) { meta = document.createElement('meta') as HTMLMetaElement; meta.name = 'viewport'; document.head.appendChild(meta); }
     meta.content = 'width=device-width, initial-scale=1, maximum-scale=1';
   }, []);
 
@@ -1805,10 +1827,11 @@ export default function App() {
 
   // ── Fetch user workspaces ──────────────────────────────────────────────────
   const fetchWorkspaces = async (userId) => {
-    const { data: memberships } = await supabase.from("workspace_members").select("*").eq("user_id", userId);
+    const { data: rawMemberships } = await supabase.from("workspace_members").select("*").eq("user_id", userId);
+    const memberships = rawMemberships as any[] | null;
     if (!memberships?.length) { setWorkspaces([]); return; }
-    const wsResults = await Promise.all(memberships.map(m => supabase.from("workspaces").select("*").eq("id", m.workspace_id).single()));
-    const combined = wsResults.map((r, i) => r.data ? { ...r.data, role: memberships[i].role } : null).filter(Boolean);
+    const wsResults = await Promise.all(memberships.map((m: any) => supabase.from("workspaces").select("*").eq("id", m.workspace_id).single()));
+    const combined = wsResults.map((r, i) => (r as any).data ? { ...(r as any).data, role: memberships[i].role } : null).filter(Boolean);
     setWorkspaces(combined);
   };
 
@@ -1896,12 +1919,13 @@ export default function App() {
   // Returns { id, chassis_data } or null on miss / error.
   const lookupCache = async (input, tierId, currentLang) => {
     try {
-      const { data, error } = await supabase.rpc("lookup_chassis_cache", {
+      const { data: rawData, error } = await supabase.rpc("lookup_chassis_cache", {
         p_input_text: normalizeInput(input),
         p_tier_id: tierId,
         p_lang: currentLang,
         p_threshold: 0.65,
       });
+      const data = rawData as any[];
       if (error || !data?.length) return null;
       return { id: data[0].id, chassis_data: data[0].chassis_data };
     } catch {
@@ -1928,6 +1952,10 @@ export default function App() {
     try {
       const { data: { session: genSession } } = await supabase.auth.getSession();
       const sessionToken = genSession?.access_token;
+
+      if (!genSession?.user?.email_confirmed_at) {
+        throw new Error(T[currentLang]?.errorEmailNotConfirmed ?? "Please confirm your email address before generating. Check your inbox.");
+      }
 
       // ── Trigram cache check (no external API) ──────────────────────────
       let cachedResult = null;
@@ -2054,7 +2082,7 @@ export default function App() {
 
   const Modals = () => (
     <>
-      {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} onSuccess={setUser} initialMode={authModalMode} />}
+      {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} onSuccess={setUser} initialMode={authModalMode} lang={lang} />}
       {workspaceCreateOpen && <WorkspaceCreateModal user={user} onClose={() => setWorkspaceCreateOpen(false)} onCreated={(ws) => { setWorkspaces(prev => [...prev, ws]); setWorkspaceCreateOpen(false); }} />}
       {buyTokensOpen && user && <TokenPurchaseModal user={user} profile={profile} onClose={() => setBuyTokensOpen(false)} onTokensAdded={() => { fetchProfile(user.id); setBuyTokensOpen(false); }} />}
       {historyOpen && user && <ChassisHistoryModal user={user} onClose={() => setHistoryOpen(false)}
