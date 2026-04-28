@@ -231,9 +231,12 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
         onClose();
       }
     } else {
-      const { error: err } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: err } = await supabase.auth.signUp({ email, password });
       if (err) {
         setErrorType(classifyAuthError(err.message));
+      } else if (!signUpData.user || signUpData.user.identities?.length === 0) {
+        // Supabase silently handles existing emails when confirmations are on
+        setErrorType("already_exists");
       } else {
         setSuccess(s.signUpSuccess);
       }
@@ -426,6 +429,15 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
               <ErrorBox short={errorShort} detail={errorDetail}
                 moreInfoOpen={moreInfoOpen} setMoreInfoOpen={setMoreInfoOpen}
                 moreInfoLabel={s.moreInfo} />
+            )}
+            {errorType === "already_exists" && (
+              <button onClick={() => { setMode("signin"); clearError(); setSuccess(""); }}
+                style={{ width: "100%", padding: "11px", border: "none", borderRadius: 2,
+                  background: "#000", color: "#fff", fontFamily: "'Courier New', monospace",
+                  fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", cursor: "pointer",
+                  marginBottom: 14, transition: "opacity 0.15s" }}>
+                → {s.submitSignIn}
+              </button>
             )}
             {success && <SuccessBox message={success} />}
 

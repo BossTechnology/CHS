@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { LANGUAGES } from "../../i18n/translations.js";
+import { LangDropdown } from "./LangDropdown.jsx";
 
 function GuestMenu({ lang, setLang, onOpenAuth, onClose }) {
   const ref = useRef(null);
@@ -31,21 +31,10 @@ function GuestMenu({ lang, setLang, onOpenAuth, onClose }) {
         </button>
       </div>
       {/* Language selector */}
-      <div style={{ padding: "14px 18px" }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.12em", marginBottom: 10 }}>LANGUAGE</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {LANGUAGES.map(l => (
-            <button key={l.code} onClick={() => setLang(l.code)}
-              style={{ padding: "5px 10px", border: l.code === lang ? "2px solid #000" : "1px solid #d0d0d0",
-                background: l.code === lang ? "#000" : "#fff",
-                color: l.code === lang ? "#fff" : "#888",
-                fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
-                cursor: "pointer", borderRadius: 2, transition: "all 0.15s" }}>
-              {l.code}
-            </button>
-          ))}
-        </div>
+      <div style={{ padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
+          letterSpacing: "0.12em" }}>LANGUAGE</span>
+        <LangDropdown lang={lang} setLang={setLang} />
       </div>
     </div>
   );
