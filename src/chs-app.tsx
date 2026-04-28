@@ -827,6 +827,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
   const [typedExample, setTypedExample] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const typingRef = useRef(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (focused || input) return;
@@ -851,6 +852,19 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
     typingRef.current = setTimeout(type, 600);
     return () => clearTimeout(typingRef.current);
   }, [exampleIndex, focused, input, lang]);
+
+  // Mobile tier slider — computed at top level (no hooks inside conditional JSX)
+  const sliderIdx = tiers.findIndex(ti => ti.id === selectedTierId);
+  const sliderTier = tiers[sliderIdx] ?? tiers[0];
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) setSelectedTierId(tiers[(sliderIdx + 1) % tiers.length].id);
+    else setSelectedTierId(tiers[(sliderIdx - 1 + tiers.length) % tiers.length].id);
+  };
 
   const selectedTier = tiers.find(ti => ti.id === selectedTierId);
   const tokenCost = (TIER_TOKEN_COST[selectedTierId] || 1) + (beyondProfitSelections.length * BP_TOKEN_COST);
@@ -879,44 +893,28 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
           {/* Tier Cards */}
           <div style={{ width: "100%", marginBottom: 24 }}>
             {isMobile ? (
-              /* ── Mobile slider ── */
-              (() => {
-                const sliderIdx = tiers.findIndex(t => t.id === selectedTierId);
-                const tier = tiers[sliderIdx];
-                const touchStartX = useRef(null);
-                const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-                const handleTouchEnd = (e) => {
-                  if (touchStartX.current === null) return;
-                  const dx = e.changedTouches[0].clientX - touchStartX.current;
-                  touchStartX.current = null;
-                  if (Math.abs(dx) < 40) return;
-                  if (dx < 0) setSelectedTierId(tiers[(sliderIdx + 1) % tiers.length].id);
-                  else setSelectedTierId(tiers[(sliderIdx - 1 + tiers.length) % tiers.length].id);
-                };
-                return (
-                  <div style={{ width: "100%" }}
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}>
-                    <div style={{ padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left", height: 148, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                        <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{tier.label.toUpperCase()}</div>
-                        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
-                      </div>
-                      <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: "0.06em", marginBottom: 8 }}>
-                        {TIER_TOKEN_COST[tier.id]} {TIER_TOKEN_COST[tier.id] === 1 ? "token" : "tokens"}
-                      </div>
-                      <div style={{ fontSize: 11, lineHeight: 1.6, color: "#ccc", fontFamily: "'Georgia', serif", flex: 1, overflow: "hidden" }}>{tier.description}</div>
-                      {/* Dot indicators */}
-                      <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
-                        {tiers.map((_, i) => (
-                          <button key={i} onClick={() => setSelectedTierId(tiers[i].id)}
-                            style={{ width: i === sliderIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === sliderIdx ? "#fff" : "#555", border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s" }} />
-                        ))}
-                      </div>
-                    </div>
+              /* ── Mobile slider — no IIFE, all logic lives at Page1 top-level ── */
+              <div style={{ width: "100%" }}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}>
+                <div style={{ padding: "14px 12px", background: "#000", color: "#fff", border: "2px solid #000", borderRadius: 2, textAlign: "left", height: 148, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                    <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 900, fontSize: 12, letterSpacing: "0.1em" }}>{sliderTier.label.toUpperCase()}</div>
+                    <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700, color: "#888", letterSpacing: "0.06em" }}>{sliderIdx + 1} / {tiers.length}</div>
                   </div>
-                );
-              })()
+                  <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: "0.06em", marginBottom: 8 }}>
+                    {TIER_TOKEN_COST[sliderTier.id]} {TIER_TOKEN_COST[sliderTier.id] === 1 ? "token" : "tokens"}
+                  </div>
+                  <div style={{ fontSize: 11, lineHeight: 1.6, color: "#ccc", fontFamily: "'Georgia', serif", flex: 1, overflow: "hidden" }}>{sliderTier.description}</div>
+                  {/* Dot indicators */}
+                  <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
+                    {tiers.map((_, i) => (
+                      <button key={i} onClick={() => setSelectedTierId(tiers[i].id)}
+                        style={{ width: i === sliderIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === sliderIdx ? "#fff" : "#555", border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s" }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
               /* ── Desktop grid ── */
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
