@@ -38,9 +38,9 @@ const supabase = (() => {
       const session: SupabaseSession | null = ev.data.session;
       _session = session;
       if (session) {
-        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(session)));
+        _tryLS(() => sessionStorage.setItem("chs_sess", JSON.stringify(session)));
       } else {
-        _tryLS(() => localStorage.removeItem("chs_sess"));
+        _tryLS(() => sessionStorage.removeItem("chs_sess"));
       }
       _notify(session);
     };
@@ -134,7 +134,7 @@ const supabase = (() => {
       if (!res.ok) return { data: null, error: { message: data.msg || data.error_description || "Signup failed" } };
       if (data.access_token) {
         _session = _normalizeSession(data);
-        _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+        _tryLS(() => sessionStorage.setItem("chs_sess", JSON.stringify(_session)));
         _notify(_session);
       }
       return { data, error: null };
@@ -149,7 +149,7 @@ const supabase = (() => {
       const data = await res.json() as SupabaseSession & { msg?: string; error_description?: string };
       if (!res.ok) return { data: null, error: { message: data.error_description || data.msg || "Sign in failed" } };
       _session = _normalizeSession(data);
-      _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+      _tryLS(() => sessionStorage.setItem("chs_sess", JSON.stringify(_session)));
       _notify(_session);
       return { data: { user: data.user, session: _session }, error: null };
     },
@@ -157,7 +157,7 @@ const supabase = (() => {
     async signOut() {
       try { await fetch(`${SUPA_URL}/auth/v1/logout`, { method: "POST", headers: _headers() }); } catch {}
       _session = null;
-      _tryLS(() => localStorage.removeItem("chs_sess"));
+      _tryLS(() => sessionStorage.removeItem("chs_sess"));
       _notify(null);
       return { error: null };
     },
@@ -185,13 +185,13 @@ const supabase = (() => {
         try {
           // ── Cross-tab coordination ───────────────────────────────────────
           // If another tab is currently refreshing, wait for it to finish, then
-          // re-read the session it stored in localStorage instead of calling
+          // re-read the session it stored in sessionStorage instead of calling
           // the token endpoint again (which would invalidate the new token).
           if (_lockHeld()) {
             const released = await _waitForLock();
             if (released) {
               // Another tab finished — pick up its session.
-              const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null") as SupabaseSession | null);
+              const stored = _tryLS(() => JSON.parse(sessionStorage.getItem("chs_sess") || "null") as SupabaseSession | null);
               if (stored && stored.refresh_token !== _session?.refresh_token) {
                 // Genuinely new session from the other tab.
                 _session = stored;
@@ -205,7 +205,7 @@ const supabase = (() => {
           const refreshToken = _session?.refresh_token;
           if (!refreshToken) {
             _session = null;
-            _tryLS(() => localStorage.removeItem("chs_sess"));
+            _tryLS(() => sessionStorage.removeItem("chs_sess"));
             _notify(null);
             return { data: null, error: { message: "No refresh token" } };
           }
@@ -222,13 +222,13 @@ const supabase = (() => {
             const data = await res.json() as SupabaseSession & { error_description?: string };
             if (!res.ok) {
               _session = null;
-              _tryLS(() => localStorage.removeItem("chs_sess"));
+              _tryLS(() => sessionStorage.removeItem("chs_sess"));
               _notify(null);
               _bcBroadcast(null);
               return { data: null, error: { message: data.error_description || "Token refresh failed" } };
             }
             _session = _normalizeSession(data);
-            _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(_session)));
+            _tryLS(() => sessionStorage.setItem("chs_sess", JSON.stringify(_session)));
             _notify(_session);
             // Tell all other tabs about the new session so they don't refresh again.
             _bcBroadcast(_session);
@@ -250,7 +250,7 @@ const supabase = (() => {
 
     async getSession(): Promise<SupabaseResponse<{ session: SupabaseSession | null }>> {
       if (!_session) {
-        const stored = _tryLS(() => JSON.parse(localStorage.getItem("chs_sess") || "null") as SupabaseSession | null);
+        const stored = _tryLS(() => JSON.parse(sessionStorage.getItem("chs_sess") || "null") as SupabaseSession | null);
         if (stored) _session = stored;
       }
       if (!_session) return { data: { session: null }, error: null };
@@ -335,7 +335,7 @@ const supabase = (() => {
             user,
           };
           _session = session;
-          _tryLS(() => localStorage.setItem("chs_sess", JSON.stringify(session)));
+          _tryLS(() => sessionStorage.setItem("chs_sess", JSON.stringify(session)));
           _notify(session);
           // Clean the hash from the URL without a page reload
           history.replaceState(null, "", window.location.pathname + window.location.search);
