@@ -406,19 +406,7 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
           <img src="/logo.png" alt="CHASS1S" style={{ height: 32, objectFit: "contain" }} />
         </div>
 
-        {/* Greeting */}
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 10,
-          color: "#888",
-          textAlign: "center",
-          margin: "0 0 10px",
-          letterSpacing: "0.06em",
-        }}>
-          {s.greeting}
-        </p>
-
-        {/* Heading */}
+        {/* Heading = greeting */}
         <h1 style={{
           fontFamily: "'Georgia', serif",
           fontSize: 19,
@@ -428,7 +416,7 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
           textAlign: "center",
           letterSpacing: "-0.01em",
         }}>
-          {s.heading}
+          {s.greeting}
         </h1>
         <p style={{
           fontFamily: "'Courier New', monospace",
@@ -481,20 +469,18 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
               </div>
               <div>
                 <label style={LABEL_STYLE}>{s.ageLabel} *</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                <select
+                  value={ageRange}
+                  onChange={(e) => setAgeRange(e.target.value)}
+                  style={{ ...INPUT_STYLE, cursor: "pointer", color: ageRange ? "#000" : "#aaa" }}
+                  onFocus={(e) => { e.target.style.borderColor = "#000"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#ddd"; }}
+                >
+                  <option value="" disabled>—</option>
                   {s.ageRanges.map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      onClick={() => setAgeRange(range)}
-                      style={chipStyle(ageRange === range)}
-                      onMouseEnter={(e) => { if (ageRange !== range) { e.currentTarget.style.borderColor = "#000"; e.currentTarget.style.color = "#000"; } }}
-                      onMouseLeave={(e) => { if (ageRange !== range) { e.currentTarget.style.borderColor = "#ddd"; e.currentTarget.style.color = "#555"; } }}
-                    >
-                      {range}
-                    </button>
+                    <option key={range} value={range}>{range}</option>
                   ))}
-                </div>
+                </select>
               </div>
             </div>
 
