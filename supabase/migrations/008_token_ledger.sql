@@ -153,8 +153,8 @@ BEGIN
   )
   RETURNING id INTO v_history_id;
 
-  INSERT INTO token_ledger (user_id, workspace_id, delta, reason, reference_id, balance_after)
-  VALUES (p_user_id, p_workspace_id, -p_amount, 'generation', v_history_id::TEXT, v_balance);
+  INSERT INTO token_ledger (user_id, workspace_id, kind, delta, reason, reference_id, balance_after)
+  VALUES (p_user_id, p_workspace_id, 'generation', -p_amount, 'generation', v_history_id::TEXT, v_balance);
 
   RETURN QUERY SELECT 'ok'::TEXT, v_history_id, v_balance;
 END;
@@ -205,9 +205,10 @@ BEGIN
   SET fulfilled_at = NOW()
   WHERE id = p_purchase_id;
 
-  INSERT INTO token_ledger (user_id, delta, reason, reference_id, balance_after)
+  INSERT INTO token_ledger (user_id, kind, delta, reason, reference_id, balance_after)
   VALUES (
     v_purchase.user_id,
+    'purchase',
     v_purchase.total_tokens,
     'purchase',
     p_purchase_id::TEXT,
