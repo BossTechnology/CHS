@@ -2104,7 +2104,7 @@ export default function App() {
     <>
       {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} onSuccess={setUser} initialMode={authModalMode} lang={lang} />}
       {workspaceCreateOpen && <WorkspaceCreateModal user={user} onClose={() => setWorkspaceCreateOpen(false)} onCreated={(ws) => { setWorkspaces(prev => [...prev, ws]); setWorkspaceCreateOpen(false); }} />}
-      {buyTokensOpen && user && <TokenPurchaseModal user={user} profile={profile} onClose={() => setBuyTokensOpen(false)} onTokensAdded={() => { fetchProfile(user.id); setBuyTokensOpen(false); }} />}
+      {buyTokensOpen && user && <TokenPurchaseModal user={user} profile={profile} currentWorkspace={currentWorkspace} onClose={() => setBuyTokensOpen(false)} onTokensAdded={() => { fetchProfile(user.id); setBuyTokensOpen(false); }} />}
       {settingsOpen && user && <SettingsModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSettingsOpen(false)} onSignOut={handleSignOut} onRefreshProfile={() => fetchProfile(user.id)} />}
       {supportOpen && user && <SupportModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSupportOpen(false)} />}
       {historyOpen && user && <ChassisHistoryModal user={user} onClose={() => setHistoryOpen(false)}
