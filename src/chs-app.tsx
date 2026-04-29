@@ -108,11 +108,18 @@ function CHSLogo({ height = 42 }) {
 }
 
 function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin,
+  chassisCount = 0 }) {
   const { isMobile } = useResponsive();
   const [menuOpen, setMenuOpen] = useState(false);
   const authRef = useRef(null);
-  const initials = user ? (user.email || "?").slice(0, 2).toUpperCase() : null;
+  const initials = user ? (() => {
+    const rawSrc = profile?.display_name?.trim() || user.email || '?';
+    const words = rawSrc.split(/\s+/).filter(Boolean);
+    return words.length >= 2
+      ? (words[0][0] + words[1][0]).toUpperCase()
+      : rawSrc.slice(0, 2).toUpperCase();
+  })() : null;
 
   return (
     <div style={{ borderBottom: "1px solid #e0e0e0", background: "#fff", padding: isMobile ? "0 16px" : "0 40px" }}>
@@ -182,6 +189,7 @@ function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, 
                 onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace}
                 onOpenHistory={() => { onOpenHistory(); setMenuOpen(false); }}
                 onClose={() => setMenuOpen(false)}
+                t={T[lang]} chassisCount={chassisCount}
               />
             )}
           </div>
@@ -1796,6 +1804,7 @@ export default function App() {
   // ── Workspace state ────────────────────────────────────────────────────────
   const [workspaces, setWorkspaces] = useState([]);
   const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  const [chassisCount, setChassisCount] = useState(0);
   const [workspaceCreateOpen, setWorkspaceCreateOpen] = useState(false);
 
   // ── History state ──────────────────────────────────────────────────────────
@@ -1823,15 +1832,28 @@ export default function App() {
     setWorkspaces(combined);
   };
 
+  // ── Fetch chassis history count ───────────────────────────────────────────
+  const fetchChassisCount = async (userId: string, workspaceId: string | null = null) => {
+    try {
+      const q = supabase.from("chassis_history").select("id").eq("user_id", userId);
+      if (workspaceId !== null) q.eq("workspace_id", workspaceId);
+      else q.is("workspace_id", null);
+      const { data } = await q;
+      setChassisCount(Array.isArray(data) ? (data as unknown[]).length : 0);
+    } catch {
+      setChassisCount(0);
+    }
+  };
+
   // ── Auth session listener ─────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) { setUser(session.user); userRef.current = session.user; fetchProfile(session.user.id); fetchWorkspaces(session.user.id); }
+      if (session?.user) { setUser(session.user); userRef.current = session.user; fetchProfile(session.user.id); fetchWorkspaces(session.user.id); fetchChassisCount(session.user.id); }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u); userRef.current = u;
-      if (u) { fetchProfile(u.id).then((prof) => { if (prof && (prof as any).onboarding_complete === false) setScreen('onboarding'); }); fetchWorkspaces(u.id); }
+      if (u) { fetchProfile(u.id).then((prof) => { if (prof && (prof as any).onboarding_complete === false) setScreen('onboarding'); }); fetchWorkspaces(u.id); fetchChassisCount(u.id); }
       else { setProfile(null); setWorkspaces([]); setCurrentWorkspace(null); }
     });
     return () => subscription.unsubscribe();
@@ -1895,6 +1917,7 @@ export default function App() {
       if (prof) { setProfile(prof); profileRef.current = prof; }
     }
 
+    fetchChassisCount(u.id, wsId);
     return { ok: true };
   };
 
@@ -2061,11 +2084,12 @@ export default function App() {
     onRefreshProfile: () => user && fetchProfile(user.id),
     workspaces,
     currentWorkspace,
-    onSwitchWorkspace: setCurrentWorkspace,
+    onSwitchWorkspace: (ws) => { setCurrentWorkspace(ws); if (user) fetchChassisCount(user.id, ws?.id ?? null); },
     onCreateWorkspace: () => setWorkspaceCreateOpen(true),
     onOpenHistory: () => setHistoryOpen(true),
     onBuyTokens: () => setBuyTokensOpen(true),
     onOpenAdmin: profile?.role === "admin" ? () => setScreen("admin") : undefined,
+    chassisCount,
   };
 
   const Modals = () => (

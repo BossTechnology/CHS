@@ -97,6 +97,16 @@ export const T = {
       freeTokens:     "New accounts receive 10 FREE TOKENS — no credit card required.",
       orContinueWith: "OR CONTINUE WITH",
     },
+    // ── Account Menu ──
+    menuSignedInAs: "SIGNED IN AS",
+    menuWorkspace: "WORKSPACE",
+    menuPersonal: "Personal",
+    menuAddWorkspace: "+ Work Space",
+    menuChassis: "CHASSIS",
+    menuTokenBalance: "TOKEN BALANCE",
+    menuBuyMore: "+ Buy More",
+    menuLanguage: "LANGUAGE",
+    menuSignOut: "SIGN OUT",
   },
   ES: {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
@@ -181,6 +191,16 @@ export const T = {
       freeTokens:     "Las cuentas nuevas reciben 10 TOKENS GRATIS — sin tarjeta de crédito.",
       orContinueWith: "O CONTINUAR CON",
     },
+    // ── Account Menu ──
+    menuSignedInAs: "SESIÓN COMO",
+    menuWorkspace: "ESPACIO DE TRABAJO",
+    menuPersonal: "Personal",
+    menuAddWorkspace: "+ Espacio de Trabajo",
+    menuChassis: "CHASSIS",
+    menuTokenBalance: "SALDO DE TOKENS",
+    menuBuyMore: "+ Comprar Más",
+    menuLanguage: "IDIOMA",
+    menuSignOut: "CERRAR SESIÓN",
   },
   FR: {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
@@ -265,6 +285,16 @@ export const T = {
       freeTokens:     "Les nouveaux comptes reçoivent 10 TOKENS GRATUITS — sans carte bancaire.",
       orContinueWith: "OU CONTINUER AVEC",
     },
+    // ── Account Menu ──
+    menuSignedInAs: "CONNECTÉ EN TANT QUE",
+    menuWorkspace: "ESPACE DE TRAVAIL",
+    menuPersonal: "Personnel",
+    menuAddWorkspace: "+ Espace de Travail",
+    menuChassis: "CHASSIS",
+    menuTokenBalance: "SOLDE DE TOKENS",
+    menuBuyMore: "+ Acheter Plus",
+    menuLanguage: "LANGUE",
+    menuSignOut: "SE DÉCONNECTER",
   },
   PT: {
     tagline: "BUSINESS OBSERVABILITY FRAMEWORK",
@@ -349,6 +379,16 @@ export const T = {
       freeTokens:     "Novas contas recebem 10 TOKENS GRATUITOS — sem cartão de crédito.",
       orContinueWith: "OU CONTINUAR COM",
     },
+    // ── Account Menu ──
+    menuSignedInAs: "CONECTADO COMO",
+    menuWorkspace: "ESPAÇO DE TRABALHO",
+    menuPersonal: "Pessoal",
+    menuAddWorkspace: "+ Espaço de Trabalho",
+    menuChassis: "CHASSIS",
+    menuTokenBalance: "SALDO DE TOKENS",
+    menuBuyMore: "+ Comprar Mais",
+    menuLanguage: "IDIOMA",
+    menuSignOut: "SAIR",
   },
 };
 
