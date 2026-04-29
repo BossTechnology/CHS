@@ -352,6 +352,7 @@ const supabase = (() => {
       const builder = {
         eq: (col: string, val: unknown) => { filters.push(`${col}=eq.${val}`); return builder; },
         neq: (col: string, val: unknown) => { filters.push(`${col}=neq.${val}`); return builder; },
+        is: (col: string, val: null) => { filters.push(val === null ? `${col}=is.null` : `${col}=is.${val}`); return builder; },
         order: (col: string, { ascending = true } = {}) => { filters.push(`order=${col}.${ascending ? "asc" : "desc"}`); return builder; },
         limit: (n: number) => { filters.push(`limit=${n}`); return builder; },
         single: <T = unknown>() => {
