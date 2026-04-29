@@ -111,7 +111,7 @@ function CHSLogo({ height = 42 }) {
 
 function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin,
-  onOpenSettings, onOpenSupport, chassisCount = 0 }) {
+  onOpenSettings, onOpenSupport, chassisCount = 0, lastChassisName = null }) {
   const { isMobile } = useResponsive();
   const [menuOpen, setMenuOpen] = useState(false);
   const authRef = useRef(null);
@@ -193,7 +193,7 @@ function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, 
                 onOpenSettings={() => { onOpenSettings?.(); setMenuOpen(false); }}
                 onOpenSupport={() => { onOpenSupport?.(); setMenuOpen(false); }}
                 onClose={() => setMenuOpen(false)}
-                t={T[lang]} chassisCount={chassisCount}
+                t={T[lang]} chassisCount={chassisCount} lastChassisName={lastChassisName}
               />
             )}
           </div>
@@ -828,7 +828,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
 
 // ─── PAGE 1 ───────────────────────────────────────────────────────────────────
 function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, onOpenAdmin, onOpenSettings, onOpenSupport, popupBlocked }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, onOpenAdmin, onOpenSettings, onOpenSupport, popupBlocked, chassisCount = 0, lastChassisName = null }) {
   const t = T[lang];
   const tiers = getTiers(lang);
   const { isMobile, isTablet } = useResponsive();
@@ -896,7 +896,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
   return (
     <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#fff", display: "flex", flexDirection: "column" }}>
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport} />
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport} chassisCount={chassisCount} lastChassisName={lastChassisName} />
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "32px 20px" : isTablet ? "48px 32px" : "60px 48px" }}>
         <div style={{ width: "100%", maxWidth: 800, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 32 : 48 }}>
@@ -1343,7 +1343,7 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
 
 // ─── PAGE 2 ───────────────────────────────────────────────────────────────────
 function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyondProfitData, setBeyondProfitData, userInput, onNewChassis, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin, onOpenSettings, onOpenSupport }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin, onOpenSettings, onOpenSupport, chassisCount = 0, lastChassisName = null }) {
   const t = T[lang];
   const { isMobile, isTablet } = useResponsive();
   const [activeTab, setActiveTab] = useState("intro");
@@ -1598,7 +1598,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
     <div style={{ fontFamily:"'Georgia',serif", minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column" }}>
       {/* Shared Header — identical to Page 1 */}
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport}>
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport} chassisCount={chassisCount} lastChassisName={lastChassisName}>
         <button onClick={handlePDF}
           className="no-print"
           title="Download PDF"
@@ -1790,6 +1790,7 @@ export default function App() {
   const [workspaces, setWorkspaces] = useState([]);
   const [currentWorkspace, setCurrentWorkspace] = useState(null);
   const [chassisCount, setChassisCount] = useState(0);
+  const [lastChassisName, setLastChassisName] = useState<string | null>(null);
   const [workspaceCreateOpen, setWorkspaceCreateOpen] = useState(false);
 
   // ── History state ──────────────────────────────────────────────────────────
@@ -1817,16 +1818,24 @@ export default function App() {
     setWorkspaces(combined);
   };
 
-  // ── Fetch chassis history count ───────────────────────────────────────────
+  // ── Fetch chassis history count + last business name ─────────────────────
   const fetchChassisCount = async (userId: string, workspaceId: string | null = null) => {
     try {
-      const q = supabase.from("chassis_history").select("id").eq("user_id", userId);
+      const q = supabase.from("chassis_history").select("id, business_name").eq("user_id", userId);
       if (workspaceId !== null) q.eq("workspace_id", workspaceId);
       else q.is("workspace_id", null);
+      q.order("created_at", { ascending: false });
       const { data } = await q;
-      setChassisCount(Array.isArray(data) ? (data as unknown[]).length : 0);
+      if (Array.isArray(data)) {
+        setChassisCount((data as unknown[]).length);
+        setLastChassisName((data[0] as any)?.business_name || null);
+      } else {
+        setChassisCount(0);
+        setLastChassisName(null);
+      }
     } catch {
       setChassisCount(0);
+      setLastChassisName(null);
     }
   };
 
@@ -2079,6 +2088,7 @@ export default function App() {
     onOpenSettings: () => setSettingsOpen(true),
     onOpenSupport: () => setSupportOpen(true),
     chassisCount,
+    lastChassisName,
   };
 
   const Modals = () => (
