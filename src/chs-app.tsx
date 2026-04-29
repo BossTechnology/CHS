@@ -11,6 +11,8 @@ import {
 import { AuthModal } from "./features/auth/AuthModal.jsx";
 import { FinishCreatingAccount } from "./features/auth/FinishCreatingAccount.jsx";
 import { AccountMenu } from "./features/auth/AccountMenu.jsx";
+import { SettingsModal } from "./features/auth/SettingsModal.jsx";
+import { SupportModal } from "./features/auth/SupportModal.jsx";
 import { TokenPurchaseModal } from "./features/billing/TokenPurchaseModal.jsx";
 import { WorkspaceCreateModal } from "./features/workspace/WorkspaceCreateModal.jsx";
 import { WorkspaceMembersModal } from "./features/workspace/WorkspaceMembersModal.jsx";
@@ -109,7 +111,7 @@ function CHSLogo({ height = 42 }) {
 
 function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin,
-  chassisCount = 0 }) {
+  onOpenSettings, onOpenSupport, chassisCount = 0 }) {
   const { isMobile } = useResponsive();
   const [menuOpen, setMenuOpen] = useState(false);
   const authRef = useRef(null);
@@ -188,6 +190,8 @@ function AppHeader({ lang, setLang, children = null, user, profile, onOpenAuth, 
                 workspaces={workspaces || []} currentWorkspace={currentWorkspace}
                 onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace}
                 onOpenHistory={() => { onOpenHistory(); setMenuOpen(false); }}
+                onOpenSettings={() => { onOpenSettings?.(); setMenuOpen(false); }}
+                onOpenSupport={() => { onOpenSupport?.(); setMenuOpen(false); }}
                 onClose={() => setMenuOpen(false)}
                 t={T[lang]} chassisCount={chassisCount}
               />
@@ -824,7 +828,7 @@ function BeyondProfitSelector({ t, beyondProfitSelections, setBeyondProfitSelect
 
 // ─── PAGE 1 ───────────────────────────────────────────────────────────────────
 function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, onOpenAdmin, popupBlocked }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onBuyTokens, onOpenAdmin, onOpenSettings, onOpenSupport, popupBlocked }) {
   const t = T[lang];
   const tiers = getTiers(lang);
   const { isMobile, isTablet } = useResponsive();
@@ -892,7 +896,7 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
   return (
     <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#fff", display: "flex", flexDirection: "column" }}>
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} />
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport} />
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "32px 20px" : isTablet ? "48px 32px" : "60px 48px" }}>
         <div style={{ width: "100%", maxWidth: 800, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 32 : 48 }}>
@@ -1358,7 +1362,7 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
 
 // ─── PAGE 2 ───────────────────────────────────────────────────────────────────
 function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyondProfitData, setBeyondProfitData, userInput, onNewChassis, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin, onOpenSettings, onOpenSupport }) {
   const t = T[lang];
   const { isMobile, isTablet } = useResponsive();
   const [activeTab, setActiveTab] = useState("intro");
@@ -1613,7 +1617,7 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
     <div style={{ fontFamily:"'Georgia',serif", minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column" }}>
       {/* Shared Header — identical to Page 1 */}
       <AppHeader lang={lang} setLang={setLang} user={user} profile={profile} onOpenAuth={onOpenAuth} onSignOut={onSignOut} onRefreshProfile={onRefreshProfile}
-        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin}>
+        workspaces={workspaces} currentWorkspace={currentWorkspace} onSwitchWorkspace={onSwitchWorkspace} onCreateWorkspace={onCreateWorkspace} onOpenHistory={onOpenHistory} onOpenAdmin={onOpenAdmin} onOpenSettings={onOpenSettings} onOpenSupport={onOpenSupport}>
         <button onClick={handlePDF}
           className="no-print"
           title="Download PDF"
@@ -1853,7 +1857,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u); userRef.current = u;
-      if (u) { fetchProfile(u.id).then((prof) => { if (prof && (prof as any).onboarding_complete === false) setScreen('onboarding'); }); fetchWorkspaces(u.id); fetchChassisCount(u.id); }
+      if (u) { fetchProfile(u.id).then(async (prof) => { if (prof && (prof as any).onboarding_complete === false) setScreen('onboarding'); if (prof && (prof as any).account_status === 'deactivated') { await supabase.rpc('reactivate_account', { p_user_id: u.id }); fetchProfile(u.id); } }); fetchWorkspaces(u.id); fetchChassisCount(u.id); }
       else { setProfile(null); setWorkspaces([]); setCurrentWorkspace(null); }
     });
     return () => subscription.unsubscribe();
@@ -2076,6 +2080,8 @@ export default function App() {
   };
 
   const [buyTokensOpen, setBuyTokensOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const authProps = {
     user, profile,
@@ -2089,6 +2095,8 @@ export default function App() {
     onOpenHistory: () => setHistoryOpen(true),
     onBuyTokens: () => setBuyTokensOpen(true),
     onOpenAdmin: profile?.role === "admin" ? () => setScreen("admin") : undefined,
+    onOpenSettings: () => setSettingsOpen(true),
+    onOpenSupport: () => setSupportOpen(true),
     chassisCount,
   };
 
@@ -2097,6 +2105,8 @@ export default function App() {
       {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} onSuccess={setUser} initialMode={authModalMode} lang={lang} />}
       {workspaceCreateOpen && <WorkspaceCreateModal user={user} onClose={() => setWorkspaceCreateOpen(false)} onCreated={(ws) => { setWorkspaces(prev => [...prev, ws]); setWorkspaceCreateOpen(false); }} />}
       {buyTokensOpen && user && <TokenPurchaseModal user={user} profile={profile} onClose={() => setBuyTokensOpen(false)} onTokensAdded={() => { fetchProfile(user.id); setBuyTokensOpen(false); }} />}
+      {settingsOpen && user && <SettingsModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSettingsOpen(false)} onSignOut={handleSignOut} onRefreshProfile={() => fetchProfile(user.id)} />}
+      {supportOpen && user && <SupportModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSupportOpen(false)} />}
       {historyOpen && user && <ChassisHistoryModal user={user} onClose={() => setHistoryOpen(false)}
         onOpenChassis={(ch) => {
           if (ch.chassis_data) {
