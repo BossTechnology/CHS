@@ -9,6 +9,7 @@ import {
   buildBeyondProfitUserMessage,
 } from "./features/generation/prompts";
 import { AuthModal } from "./features/auth/AuthModal.jsx";
+import { FinishCreatingAccount } from "./features/auth/FinishCreatingAccount.jsx";
 import { AccountMenu } from "./features/auth/AccountMenu.jsx";
 import { TokenPurchaseModal } from "./features/billing/TokenPurchaseModal.jsx";
 import { WorkspaceCreateModal } from "./features/workspace/WorkspaceCreateModal.jsx";
@@ -1809,6 +1810,7 @@ export default function App() {
   const fetchProfile = async (userId) => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) { setProfile(data); profileRef.current = data; }
+    return data;
   };
 
   // ── Fetch user workspaces ──────────────────────────────────────────────────
@@ -1829,7 +1831,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u); userRef.current = u;
-      if (u) { fetchProfile(u.id); fetchWorkspaces(u.id); }
+      if (u) { fetchProfile(u.id).then((prof) => { if (prof && (prof as any).onboarding_complete === false) setScreen('onboarding'); }); fetchWorkspaces(u.id); }
       else { setProfile(null); setWorkspaces([]); setCurrentWorkspace(null); }
     });
     return () => subscription.unsubscribe();
@@ -2102,6 +2104,10 @@ export default function App() {
       }}>×</button>
     </div>
   ) : null;
+
+  if (screen === 'onboarding' && user) return (
+    <FinishCreatingAccount user={user} lang={lang} onComplete={() => { fetchProfile(user.id); setScreen('page1'); }} />
+  );
 
   if (screen === "page1") return (
     <>
