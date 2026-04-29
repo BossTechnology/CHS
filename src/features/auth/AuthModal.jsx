@@ -25,10 +25,11 @@ const AUTH_STRINGS = {
     freeTokens:    "New accounts receive 10 FREE TOKENS — no credit card required.",
     orContinueWith:"OR CONTINUE WITH",
     moreInfo:      "More info",
-    accountNotFoundShort:    "Account not found.",
-    accountNotFoundMoreInfo: "No account exists for this email address. You can create one using the CREATE ACCOUNT tab above.",
-    alreadyExistsShort:      "Email already registered.",
-    alreadyExistsMoreInfo:   "An account with this email already exists. Use the SIGN IN tab or reset your password below.",
+    emailInvalid:  "Please enter a valid email address.",
+    accountNotFoundShort:    "ACCOUNT NOT FOUND",
+    accountNotFoundMoreInfo: "The email address entered is incorrect, the account was deleted due to inactivity, or a previously linked account was removed. Check the spelling or create a new account.",
+    alreadyExistsShort:      "ACCOUNT ALREADY EXISTS",
+    alreadyExistsMoreInfo:   "The email you are using is already registered. Sign in rather than register, use Forgot Password, or use a different email.",
     invalidLoginShort:       "Incorrect email or password.",
     invalidLoginMoreInfo:    "Double-check your credentials. If you signed up with Google or LinkedIn, use those buttons instead.",
     unknownErrorShort:       "Something went wrong.",
@@ -56,10 +57,11 @@ const AUTH_STRINGS = {
     freeTokens:    "Las cuentas nuevas reciben 10 TOKENS GRATIS — sin tarjeta de crédito.",
     orContinueWith:"O CONTINUAR CON",
     moreInfo:      "Más info",
-    accountNotFoundShort:    "Cuenta no encontrada.",
-    accountNotFoundMoreInfo: "No existe ninguna cuenta con este email. Puedes crear una con la pestaña CREAR CUENTA.",
-    alreadyExistsShort:      "Email ya registrado.",
-    alreadyExistsMoreInfo:   "Ya existe una cuenta con este email. Usa la pestaña INICIAR SESIÓN o restablece tu contraseña.",
+    emailInvalid:  "Por favor ingresa un correo electrónico válido.",
+    accountNotFoundShort:    "CUENTA NO ENCONTRADA",
+    accountNotFoundMoreInfo: "La dirección de correo electrónico ingresada es incorrecta, la cuenta fue eliminada por inactividad, o una cuenta vinculada previamente fue removida. Verifica la ortografía o crea una nueva cuenta.",
+    alreadyExistsShort:      "CUENTA YA EXISTE",
+    alreadyExistsMoreInfo:   "El correo electrónico que estás usando ya está registrado. Inicia sesión, usa Olvidé mi contraseña, o usa otro correo.",
     invalidLoginShort:       "Email o contraseña incorrectos.",
     invalidLoginMoreInfo:    "Verifica tus credenciales. Si te registraste con Google o LinkedIn, usa esos botones.",
     unknownErrorShort:       "Algo salió mal.",
@@ -87,10 +89,11 @@ const AUTH_STRINGS = {
     freeTokens:    "Les nouveaux comptes reçoivent 10 TOKENS GRATUITS — sans carte bancaire.",
     orContinueWith:"OU CONTINUER AVEC",
     moreInfo:      "Plus d'info",
-    accountNotFoundShort:    "Compte introuvable.",
-    accountNotFoundMoreInfo: "Aucun compte n'existe pour cet email. Vous pouvez en créer un via l'onglet CRÉER UN COMPTE.",
-    alreadyExistsShort:      "Email déjà enregistré.",
-    alreadyExistsMoreInfo:   "Un compte avec cet email existe déjà. Utilisez l'onglet CONNEXION ou réinitialisez votre mot de passe.",
+    emailInvalid:  "Veuillez saisir une adresse email valide.",
+    accountNotFoundShort:    "COMPTE INTROUVABLE",
+    accountNotFoundMoreInfo: "L'adresse email saisie est incorrecte, le compte a été supprimé pour inactivité, ou un compte précédemment lié a été supprimé. Vérifiez l'orthographe ou créez un nouveau compte.",
+    alreadyExistsShort:      "COMPTE DÉJÀ EXISTANT",
+    alreadyExistsMoreInfo:   "L'email que vous utilisez est déjà enregistré. Connectez-vous, utilisez Mot de passe oublié, ou utilisez un autre email.",
     invalidLoginShort:       "Email ou mot de passe incorrect.",
     invalidLoginMoreInfo:    "Vérifiez vos identifiants. Si vous vous êtes inscrit avec Google ou LinkedIn, utilisez ces boutons.",
     unknownErrorShort:       "Une erreur s'est produite.",
@@ -118,10 +121,11 @@ const AUTH_STRINGS = {
     freeTokens:    "Novas contas recebem 10 TOKENS GRATUITOS — sem cartão de crédito.",
     orContinueWith:"OU CONTINUAR COM",
     moreInfo:      "Mais info",
-    accountNotFoundShort:    "Conta não encontrada.",
-    accountNotFoundMoreInfo: "Nenhuma conta existe para este email. Você pode criar uma na aba CRIAR CONTA.",
-    alreadyExistsShort:      "Email já cadastrado.",
-    alreadyExistsMoreInfo:   "Já existe uma conta com este email. Use a aba ENTRAR ou redefina sua senha.",
+    emailInvalid:  "Por favor insira um endereço de email válido.",
+    accountNotFoundShort:    "CONTA NÃO ENCONTRADA",
+    accountNotFoundMoreInfo: "O endereço de email inserido está incorreto, a conta foi excluída por inatividade, ou uma conta vinculada anteriormente foi removida. Verifique a ortografia ou crie uma nova conta.",
+    alreadyExistsShort:      "CONTA JÁ EXISTE",
+    alreadyExistsMoreInfo:   "O email que você está usando já está cadastrado. Faça login, use Esqueceu a senha, ou use um email diferente.",
     invalidLoginShort:       "Email ou senha incorretos.",
     invalidLoginMoreInfo:    "Verifique suas credenciais. Se se cadastrou com Google ou LinkedIn, use esses botões.",
     unknownErrorShort:       "Algo deu errado.",
@@ -204,11 +208,19 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
 
   const clearError = () => { setErrorType(null); setMoreInfoOpen(false); };
 
+  // Auto-expand More Info for errors that need guidance without extra click
+  const setError = (type) => {
+    setErrorType(type);
+    if (type === "account_not_found" || type === "already_exists") setMoreInfoOpen(true);
+  };
+
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
   const handleOAuth = async (provider) => {
     setOauthLoading(provider); clearError();
@@ -225,7 +237,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
     if (mode === "signin") {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) {
-        setErrorType(classifyAuthError(err.message));
+        setError(classifyAuthError(err.message));
       } else {
         onSuccess(data.user);
         onClose();
@@ -233,10 +245,9 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
     } else {
       const { data: signUpData, error: err } = await supabase.auth.signUp({ email, password });
       if (err) {
-        setErrorType(classifyAuthError(err.message));
+        setError(classifyAuthError(err.message));
       } else if (!signUpData.user || signUpData.user.identities?.length === 0) {
-        // Supabase silently handles existing emails when confirmations are on
-        setErrorType("already_exists");
+        setError("already_exists");
       } else {
         setSuccess(s.signUpSuccess);
       }
@@ -246,6 +257,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
 
   const handleForgot = async () => {
     if (!email) return;
+    if (!isValidEmail(email)) { setErrorType("email_invalid"); return; }
     setLoading(true); clearError(); setSuccess("");
     const { error: err } = await supabase.auth.resetPasswordForEmail(email);
     if (err) {
@@ -261,6 +273,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
     account_not_found: s.accountNotFoundShort,
     already_exists:    s.alreadyExistsShort,
     invalid_login:     s.invalidLoginShort,
+    email_invalid:     s.emailInvalid,
     unknown:           s.unknownErrorShort,
   }[errorType];
 
@@ -268,6 +281,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
     account_not_found: s.accountNotFoundMoreInfo,
     already_exists:    s.alreadyExistsMoreInfo,
     invalid_login:     s.invalidLoginMoreInfo,
+    email_invalid:     null,
     unknown:           s.unknownErrorMoreInfo,
   }[errorType];
 
@@ -476,16 +490,18 @@ function ErrorBox({ short, detail, moreInfoOpen, setMoreInfoOpen, moreInfoLabel 
         padding: "10px 14px", gap: 8 }}>
         <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#cc0000",
           lineHeight: 1.5 }}>{short}</span>
-        <button
-          onClick={() => setMoreInfoOpen(o => !o)}
-          style={{ background: "none", border: "1px solid #ffaaaa", borderRadius: 2,
-            padding: "2px 8px", cursor: "pointer", fontFamily: "'Courier New', monospace",
-            fontSize: 9, color: "#cc0000", whiteSpace: "nowrap", flexShrink: 0,
-            letterSpacing: "0.06em" }}>
-          {moreInfoLabel} {moreInfoOpen ? "▲" : "▼"}
-        </button>
+        {detail && (
+          <button
+            onClick={() => setMoreInfoOpen(o => !o)}
+            style={{ background: "none", border: "1px solid #ffaaaa", borderRadius: 2,
+              padding: "2px 8px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+              fontSize: 9, color: "#cc0000", whiteSpace: "nowrap", flexShrink: 0,
+              letterSpacing: "0.06em" }}>
+            {moreInfoLabel} {moreInfoOpen ? "▲" : "▼"}
+          </button>
+        )}
       </div>
-      {moreInfoOpen && (
+      {detail && moreInfoOpen && (
         <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #ffe0e0",
           fontFamily: "'Georgia', serif", fontSize: 12, color: "#a00000", lineHeight: 1.6 }}>
           {detail}
