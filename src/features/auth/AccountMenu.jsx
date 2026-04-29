@@ -69,6 +69,7 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
   if (buyOpen) return (
     <TokenPurchaseModal
       user={user} profile={profile}
+      currentWorkspace={currentWorkspace}
       onClose={() => setBuyOpen(false)}
       onTokensAdded={() => { onRefreshProfile(); setBuyOpen(false); onClose(); }}
     />
@@ -203,7 +204,7 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
           {t?.menuTokenBalance || 'TOKEN BALANCE'}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "#000", lineHeight: 1,
+          <span style={{ fontSize: 18, fontWeight: 900, color: "#000", lineHeight: 1,
             fontFamily: "'Courier New', monospace" }}>{displayTokens}</span>
           <button onClick={() => setBuyOpen(true)}
             style={{ background: "none", border: "none", cursor: "pointer",

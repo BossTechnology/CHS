@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import supabase from "../../lib/supabase";
 
-function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
+function TokenPurchaseModal({ user, profile, currentWorkspace, onClose, onTokensAdded }) {
   const [amountStr, setAmountStr] = useState("25.00");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
@@ -105,11 +105,20 @@ function TokenPurchaseModal({ user, profile, onClose, onTokensAdded }) {
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#555",
             letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · TOKEN PURCHASE</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Georgia', serif",
-            marginBottom: 6 }}>Buy Tokens</div>
+            marginBottom: currentWorkspace ? 4 : 6 }}>Buy Tokens</div>
+          {currentWorkspace && (
+            <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#9966ff",
+              letterSpacing: "0.1em", marginBottom: 6 }}>
+              {currentWorkspace.name}
+            </div>
+          )}
           <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555" }}>
             Current balance:{" "}
             <span style={{ color: "#fff", fontWeight: 900 }}>
-              {typeof profile?.token_balance === "number" ? profile.token_balance : "—"} tokens
+              {currentWorkspace
+                ? (typeof currentWorkspace.token_balance === "number" ? currentWorkspace.token_balance : "—")
+                : (typeof profile?.token_balance === "number" ? profile.token_balance : "—")
+              } tokens
             </span>
           </div>
         </div>
