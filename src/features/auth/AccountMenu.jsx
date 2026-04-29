@@ -3,8 +3,36 @@ import { TokenPurchaseModal } from "../billing/TokenPurchaseModal.jsx";
 import { WorkspaceMembersModal } from "../workspace/WorkspaceMembersModal.jsx";
 import { LangDropdown } from "../../shared/ui/LangDropdown.jsx";
 
+function SignOutSVG() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3" />
+      <polyline points="9 9 12 6.5 9 4" />
+      <line x1="12" y1="6.5" x2="5" y2="6.5" />
+    </svg>
+  );
+}
+function GearSVG() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6.5" cy="6.5" r="1.75" />
+      <path d="M6.5 1.2v1.1M6.5 10.7v1.1M1.2 6.5h1.1M10.7 6.5h1.1M2.9 2.9l.78.78M9.32 9.32l.78.78M2.9 10.1l.78-.78M9.32 3.68l.78-.78" />
+    </svg>
+  );
+}
+function SupportSVG() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 1.5H2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3l1.5 2 1.5-2h3a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1z" />
+      <line x1="6.5" y1="4" x2="6.5" y2="6" />
+      <circle cx="6.5" cy="7.5" r="0.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang, setLang,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, t, chassisCount = 0 }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory,
+  onOpenSettings, onOpenSupport, t, chassisCount = 0 }) {
   const ref = useRef(null);
   const [buyOpen, setBuyOpen] = useState(false);
   const [workspaceExpanded, setWorkspaceExpanded] = useState(false);
@@ -195,16 +223,29 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
         </div>
       </div>
 
-      {/* Actions */}
-      <div style={{ padding: "6px 0" }}>
-        <button onClick={() => { onSignOut(); onClose(); }}
-          style={{ width: "100%", padding: "10px 18px", background: "none", border: "none",
-            cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
-            fontSize: 11, color: "#000", fontWeight: 700, letterSpacing: "0.08em" }}
-          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
-          onMouseLeave={e => e.currentTarget.style.background = "none"}>
-          {t?.menuSignOut || 'SIGN OUT'}
-        </button>
+      {/* Actions — 3-button row */}
+      <div style={{ display: "flex", borderTop: "1px solid #e8e8e8" }}>
+        {[
+          { key: "signout",  label: t?.menuSignOut  || "SIGN OUT", icon: <SignOutSVG />, action: () => { onSignOut(); onClose(); } },
+          { key: "settings", label: t?.menuSettings || "Settings",  icon: <GearSVG />,    action: () => { onOpenSettings?.(); onClose(); } },
+          { key: "support",  label: t?.menuSupport  || "Support",   icon: <SupportSVG />, action: () => { onOpenSupport?.(); onClose(); } },
+        ].map((item, idx) => (
+          <div key={item.key} style={{ display: "contents" }}>
+            {idx > 0 && <div style={{ width: 1, background: "#e8e8e8", alignSelf: "stretch" }} />}
+            <button onClick={item.action}
+              style={{ flex: 1, padding: "12px 8px", background: "none", border: "none",
+                cursor: "pointer", display: "flex", flexDirection: "column",
+                alignItems: "center", gap: 5, color: "#000" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}>
+              {item.icon}
+              <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
+                fontWeight: 700, letterSpacing: "0.06em", color: "#000" }}>
+                {item.label}
+              </span>
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -286,6 +286,17 @@ const supabase = (() => {
       return Promise.resolve({ data: { url: `${SUPA_URL}/auth/v1/authorize?${params}` }, error: null });
     },
 
+    async updateUser(attrs: { email?: string; password?: string }) {
+      const res = await fetch(`${SUPA_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: _headers(),
+        body: JSON.stringify(attrs),
+      });
+      const data = await res.json() as Record<string, string>;
+      if (!res.ok) return { data: null, error: { message: data.msg || data.error_description || "Update failed" } };
+      return { data, error: null };
+    },
+
     // Called once on app boot — reads the OAuth hash fragment Supabase puts in
     // the URL after a successful provider redirect (access_token, refresh_token…)
     // Also handles error cases (user cancelled, provider error, etc.) by storing
