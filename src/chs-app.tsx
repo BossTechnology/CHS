@@ -1107,25 +1107,6 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
           ))}
         </div>
 
-        {/* ── Live stream terminal ───────────────────────────────────────── */}
-        <div style={{
-          marginTop: 32, maxWidth: 480, margin: "32px auto 0",
-          background: "#0d0d0d", border: "1px solid #222",
-          borderRadius: 3, padding: "12px 14px", textAlign: "left", minHeight: 64,
-        }}>
-          <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#333", letterSpacing: "0.15em", marginBottom: 8 }}>
-            RAW STREAM {streaming ? `· ${streamedChars.toLocaleString()} CHARS` : "· WAITING..."}
-          </div>
-          <div style={{
-            fontFamily: "'Courier New', monospace", fontSize: 10, color: "#4a4",
-            lineHeight: 1.6, wordBreak: "break-all", minHeight: 36,
-            whiteSpace: "pre-wrap",
-          }}>
-            {streaming
-              ? streamPreview + "▋"
-              : <span style={{ color: "#222" }}>{"{ awaiting response... }"}</span>}
-          </div>
-        </div>
 
         {!streaming && (
           <div style={{ marginTop: 32, display: "flex", gap: 6, justifyContent: "center" }}>
