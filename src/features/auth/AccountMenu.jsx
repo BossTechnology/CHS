@@ -32,7 +32,7 @@ function SupportSVG() {
 
 function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang, setLang,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory,
-  onOpenSettings, onOpenSupport, t, chassisCount = 0 }) {
+  onOpenSettings, onOpenSupport, t, chassisCount = 0, lastChassisName = null }) {
   const ref = useRef(null);
   const [buyOpen, setBuyOpen] = useState(false);
   const [workspaceExpanded, setWorkspaceExpanded] = useState(false);
@@ -64,8 +64,6 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
     ? (words[0][0] + words[1][0]).toUpperCase()
     : rawSrc.slice(0, 2).toUpperCase();
 
-  const chassisLabel = `${t?.menuChassis || 'CHASSIS'} (${chassisCount})`;
-
   if (buyOpen) return (
     <TokenPurchaseModal
       user={user} profile={profile}
@@ -85,58 +83,54 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
 
   return (
     <div ref={ref} style={{ position: "absolute", right: 0, top: "calc(100% + 8px)",
-      background: "#fff", border: "1px solid #000", minWidth: 260, zIndex: 300,
+      background: "#fff", border: "1px solid #000", minWidth: 220, zIndex: 300,
       boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
 
-      {/* User info — avatar + signed in as */}
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid #e8e8e8" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#000",
+      {/* User info — avatar + name + lang dropdown */}
+      <div style={{ padding: "12px 14px", borderBottom: "1px solid #e8e8e8" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#000",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
               fontWeight: 900, color: "#fff" }}>{initials}</span>
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-              letterSpacing: "0.12em", marginBottom: 3 }}>
-              {t?.menuSignedInAs || 'SIGNED IN AS'}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#000",
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#000",
               fontFamily: "'Georgia', serif", overflow: "hidden",
               textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {profile?.display_name || user.email}
             </div>
           </div>
+          <LangDropdown lang={lang} setLang={setLang} />
         </div>
       </div>
 
       {/* Workspace switcher */}
       <div style={{ borderBottom: "1px solid #e8e8e8" }}>
         <button onClick={() => setWorkspaceExpanded(o => !o)}
-          style={{ width: "100%", padding: "12px 18px", background: "none", border: "none",
+          style={{ width: "100%", padding: "10px 14px", background: "none", border: "none",
             cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center",
             justifyContent: "space-between", gap: 8 }}>
           <div>
             <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-              letterSpacing: "0.12em", marginBottom: 3 }}>
+              letterSpacing: "0.12em", marginBottom: 2 }}>
               {t?.menuWorkspace || 'WORKSPACE'}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontFamily: "'Courier New', monospace", fontSize: 12, fontWeight: 900,
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 900,
                 color: "#000" }}>{contextLabel}</span>
               {roleLabel && <span style={{ fontFamily: "'Courier New', monospace", fontSize: 8,
-                color: "#888", border: "1px solid #ddd", padding: "1px 5px" }}>{roleLabel}</span>}
+                color: "#888", border: "1px solid #ddd", padding: "1px 4px" }}>{roleLabel}</span>}
             </div>
           </div>
-          <span style={{ fontFamily: "monospace", fontSize: 11, color: "#888" }}>
+          <span style={{ fontFamily: "monospace", fontSize: 10, color: "#888" }}>
             {workspaceExpanded ? "▲" : "▼"}
           </span>
         </button>
         {workspaceExpanded && (
           <div style={{ borderTop: "1px solid #f0f0f0" }}>
-            {/* Personal account option */}
             <button onClick={() => { onSwitchWorkspace(null); setWorkspaceExpanded(false); }}
-              style={{ width: "100%", padding: "9px 18px 9px 28px", background: !currentWorkspace ? "#f8f8f8" : "none",
+              style={{ width: "100%", padding: "8px 14px 8px 22px", background: !currentWorkspace ? "#f8f8f8" : "none",
                 border: "none", cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
                 fontSize: 11, color: "#000", fontWeight: !currentWorkspace ? 900 : 400,
                 borderLeft: !currentWorkspace ? "3px solid #000" : "3px solid transparent" }}
@@ -144,11 +138,10 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
               onMouseLeave={e => { if (currentWorkspace) e.currentTarget.style.background = "none"; }}>
               {t?.menuPersonal || 'Personal'}
             </button>
-            {/* Workspace list */}
             {workspaces.map(ws => (
               <div key={ws.id} style={{ display: "flex", alignItems: "stretch" }}>
                 <button onClick={() => { onSwitchWorkspace(ws); setWorkspaceExpanded(false); }}
-                  style={{ flex: 1, padding: "9px 12px 9px 28px",
+                  style={{ flex: 1, padding: "8px 10px 8px 22px",
                     background: currentWorkspace?.id === ws.id ? "#f8f8f8" : "none",
                     border: "none", cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
                     fontSize: 11, color: "#000", fontWeight: currentWorkspace?.id === ws.id ? 900 : 400,
@@ -157,14 +150,14 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
                   onMouseEnter={e => { if (currentWorkspace?.id !== ws.id) e.currentTarget.style.background = "#f5f5f5"; }}
                   onMouseLeave={e => { if (currentWorkspace?.id !== ws.id) e.currentTarget.style.background = "none"; }}>
                   <span>{ws.name}</span>
-                  <span style={{ fontSize: 8, color: "#888", border: "1px solid #eee", padding: "1px 5px", marginLeft: 8 }}>
+                  <span style={{ fontSize: 8, color: "#888", border: "1px solid #eee", padding: "1px 4px", marginLeft: 6 }}>
                     {ws.role?.toUpperCase()}
                   </span>
                 </button>
                 {(ws.role === "owner" || ws.role === "co-owner") && (
                   <button onClick={() => setManagingWorkspace(ws)}
                     title="Manage members"
-                    style={{ padding: "9px 12px", background: "none", border: "none", borderLeft: "1px solid #f0f0f0",
+                    style={{ padding: "8px 10px", background: "none", border: "none", borderLeft: "1px solid #f0f0f0",
                       cursor: "pointer", fontFamily: "monospace", fontSize: 13, color: "#aaa" }}
                     onMouseEnter={e => { e.currentTarget.style.background = "#f5f5f5"; e.currentTarget.style.color = "#000"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#aaa"; }}>
@@ -173,34 +166,42 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
                 )}
               </div>
             ))}
-            {/* Create workspace */}
             <button onClick={() => { onCreateWorkspace(); setWorkspaceExpanded(false); onClose(); }}
-              style={{ width: "100%", padding: "9px 18px 9px 28px", background: "none", border: "none",
+              style={{ width: "100%", padding: "8px 14px 8px 22px", background: "none", border: "none",
                 borderTop: "1px solid #f0f0f0", cursor: "pointer", textAlign: "left",
                 fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888" }}
-              onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
-              onMouseLeave={e => e.currentTarget.style.background = "none"}>
+              onMouseEnter={e => { e.currentTarget.style.background = "#f5f5f5"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
               {t?.menuAddWorkspace || '+ Work Space'}
             </button>
           </div>
         )}
       </div>
 
-      {/* Chassis count */}
+      {/* Chassis count + last name */}
       <button onClick={() => { onOpenHistory(); onClose(); }}
-        style={{ width: "100%", padding: "10px 18px", background: "none", border: "none",
-          borderBottom: "1px solid #e8e8e8", cursor: "pointer", textAlign: "left",
-          fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 700,
-          letterSpacing: "0.08em", color: "#000" }}
+        style={{ width: "100%", padding: "9px 14px", background: "none", border: "none",
+          borderBottom: "1px solid #e8e8e8", cursor: "pointer", textAlign: "left" }}
         onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
         onMouseLeave={e => e.currentTarget.style.background = "none"}>
-        {chassisLabel}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, overflow: "hidden" }}>
+          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, fontWeight: 700,
+            letterSpacing: "0.12em", color: "#000", whiteSpace: "nowrap" }}>
+            {t?.menuChassis || 'CHASSIS'} ({chassisCount})
+          </span>
+          {lastChassisName && (
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+              · {lastChassisName}
+            </span>
+          )}
+        </div>
       </button>
 
       {/* Token balance */}
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid #e8e8e8", background: "#f8f8f8" }}>
+      <div style={{ padding: "12px 14px", borderBottom: "1px solid #e8e8e8", background: "#f8f8f8" }}>
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.12em", marginBottom: 6 }}>
+          letterSpacing: "0.12em", marginBottom: 4 }}>
           {t?.menuTokenBalance || 'TOKEN BALANCE'}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -209,18 +210,9 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
           <button onClick={() => setBuyOpen(true)}
             style={{ background: "none", border: "none", cursor: "pointer",
               fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
-              color: "#000", textDecoration: "underline" }}>
+              color: "#000" }}>
             {t?.menuBuyMore || '+ Buy More'}
           </button>
-        </div>
-      </div>
-
-      {/* Language selector */}
-      <div style={{ padding: "12px 18px", borderBottom: "1px solid #e8e8e8" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-            letterSpacing: "0.12em" }}>{t?.menuLanguage || 'LANGUAGE'}</span>
-          <LangDropdown lang={lang} setLang={setLang} />
         </div>
       </div>
 
@@ -234,14 +226,14 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
           <div key={item.key} style={{ display: "contents" }}>
             {idx > 0 && <div style={{ width: 1, background: "#e8e8e8", alignSelf: "stretch" }} />}
             <button onClick={item.action}
-              style={{ flex: 1, padding: "12px 8px", background: "none", border: "none",
+              style={{ flex: 1, padding: "10px 6px", background: "none", border: "none",
                 cursor: "pointer", display: "flex", flexDirection: "column",
-                alignItems: "center", gap: 5, color: "#000" }}
+                alignItems: "center", gap: 4, color: "#000" }}
               onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
               onMouseLeave={e => e.currentTarget.style.background = "none"}>
               {item.icon}
               <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
-                fontWeight: 700, letterSpacing: "0.06em", color: "#000" }}>
+                fontWeight: 700, letterSpacing: "0.12em", color: "#000" }}>
                 {item.label}
               </span>
             </button>
