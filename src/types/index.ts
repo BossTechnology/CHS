@@ -39,6 +39,12 @@ export interface Profile {
   email: string;
   token_balance: number;
   created_at?: string;
+  display_name?: string;
+  country?: string;
+  age_range?: string;
+  user_roles?: string[];
+  onboarding_complete?: boolean;
+  role?: string;
 }
 
 export interface Workspace {
