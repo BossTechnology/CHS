@@ -5,15 +5,17 @@ const FINISH_STRINGS = {
   EN: {
     heading: "Finish Creating Your Account",
     subheading: "Just a few details to personalize your experience.",
-    privacyLink: "Why do we ask?",
-    nameLabel: "Display Name",
+    nameLabel: "DISPLAY NAME",
     namePlaceholder: "How should we call you?",
-    countryLabel: "Country",
-    ageLabel: "Age Range",
-    rolesLabel: "Your Role(s)",
+    countryLabel: "COUNTRY",
+    countryPlaceholder: "Select country",
+    countrySearch: "Search...",
+    countryNoResults: "No results",
+    ageLabel: "AGE RANGE",
+    rolesLabel: "YOUR ROLE(S)",
     rolesOptional: "optional",
-    submitBtn: "Complete Setup",
-    submitting: "Saving...",
+    submitBtn: "COMPLETE SETUP",
+    submitting: "SAVING...",
     successMsg: "All set! Welcome to CHASS1S.",
     terms: "By continuing you agree to our",
     termsLink: "Terms of Service",
@@ -26,15 +28,17 @@ const FINISH_STRINGS = {
   ES: {
     heading: "Termina de Crear tu Cuenta",
     subheading: "Solo unos detalles para personalizar tu experiencia.",
-    privacyLink: "¿Por qué preguntamos?",
-    nameLabel: "Nombre para mostrar",
+    nameLabel: "NOMBRE PARA MOSTRAR",
     namePlaceholder: "¿Cómo debemos llamarte?",
-    countryLabel: "País",
-    ageLabel: "Rango de Edad",
-    rolesLabel: "Tu(s) Rol(es)",
+    countryLabel: "PAÍS",
+    countryPlaceholder: "Selecciona país",
+    countrySearch: "Buscar...",
+    countryNoResults: "Sin resultados",
+    ageLabel: "RANGO DE EDAD",
+    rolesLabel: "TU(S) ROL(ES)",
     rolesOptional: "opcional",
-    submitBtn: "Completar Configuración",
-    submitting: "Guardando...",
+    submitBtn: "COMPLETAR CONFIGURACIÓN",
+    submitting: "GUARDANDO...",
     successMsg: "¡Listo! Bienvenido a CHASS1S.",
     terms: "Al continuar aceptas nuestros",
     termsLink: "Términos de Servicio",
@@ -47,15 +51,17 @@ const FINISH_STRINGS = {
   FR: {
     heading: "Finalisez la Création de Votre Compte",
     subheading: "Quelques détails pour personnaliser votre expérience.",
-    privacyLink: "Pourquoi demandons-nous cela ?",
-    nameLabel: "Nom d'affichage",
+    nameLabel: "NOM D'AFFICHAGE",
     namePlaceholder: "Comment devons-nous vous appeler ?",
-    countryLabel: "Pays",
-    ageLabel: "Tranche d'âge",
-    rolesLabel: "Votre / Vos Rôle(s)",
+    countryLabel: "PAYS",
+    countryPlaceholder: "Sélectionner un pays",
+    countrySearch: "Rechercher...",
+    countryNoResults: "Aucun résultat",
+    ageLabel: "TRANCHE D'ÂGE",
+    rolesLabel: "VOTRE / VOS RÔLE(S)",
     rolesOptional: "optionnel",
-    submitBtn: "Terminer la Configuration",
-    submitting: "Enregistrement...",
+    submitBtn: "TERMINER LA CONFIGURATION",
+    submitting: "ENREGISTREMENT...",
     successMsg: "C'est parti ! Bienvenue sur CHASS1S.",
     terms: "En continuant, vous acceptez nos",
     termsLink: "Conditions d'Utilisation",
@@ -68,15 +74,17 @@ const FINISH_STRINGS = {
   PT: {
     heading: "Conclua a Criação da sua Conta",
     subheading: "Apenas alguns detalhes para personalizar sua experiência.",
-    privacyLink: "Por que perguntamos?",
-    nameLabel: "Nome de exibição",
+    nameLabel: "NOME DE EXIBIÇÃO",
     namePlaceholder: "Como devemos te chamar?",
-    countryLabel: "País",
-    ageLabel: "Faixa Etária",
-    rolesLabel: "Seu(s) Papel(éis)",
+    countryLabel: "PAÍS",
+    countryPlaceholder: "Selecionar país",
+    countrySearch: "Pesquisar...",
+    countryNoResults: "Sem resultados",
+    ageLabel: "FAIXA ETÁRIA",
+    rolesLabel: "SEU(S) PAPEL(EIS)",
     rolesOptional: "opcional",
-    submitBtn: "Concluir Configuração",
-    submitting: "Salvando...",
+    submitBtn: "CONCLUIR CONFIGURAÇÃO",
+    submitting: "SALVANDO...",
     successMsg: "Pronto! Bem-vindo ao CHASS1S.",
     terms: "Ao continuar, você concorda com nossos",
     termsLink: "Termos de Serviço",
@@ -88,15 +96,9 @@ const FINISH_STRINGS = {
   },
 };
 
-// Always save English role values regardless of UI language
 const EN_ROLES = [
-  "Student",
-  "Entrepreneur",
-  "Business Owner",
-  "Corporate",
-  "Gov Employee",
-  "Artist / Creative",
-  "Consultant",
+  "Student", "Entrepreneur", "Business Owner", "Corporate",
+  "Gov Employee", "Artist / Creative", "Consultant",
 ];
 
 const COUNTRIES = [
@@ -176,16 +178,36 @@ const COUNTRIES = [
   { code: "OT", name: "Other", flag: "🌍" },
 ];
 
-function CountryDropdown({ value, onChange, countryLabel }) {
+const INPUT_STYLE = {
+  width: "100%",
+  padding: "10px 12px",
+  border: "1px solid #ddd",
+  fontFamily: "'Courier New', monospace",
+  fontSize: 12,
+  boxSizing: "border-box",
+  color: "#000",
+  outline: "none",
+  background: "#fff",
+  borderRadius: 0,
+};
+
+const LABEL_STYLE = {
+  display: "block",
+  fontFamily: "'Courier New', monospace",
+  fontSize: 10,
+  color: "#aaa",
+  letterSpacing: "0.12em",
+  marginBottom: 8,
+};
+
+function CountryDropdown({ value, onChange, s }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
   const searchRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -197,7 +219,6 @@ function CountryDropdown({ value, onChange, countryLabel }) {
   const filtered = COUNTRIES.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
-
   const selected = COUNTRIES.find((c) => c.code === value);
 
   return (
@@ -206,67 +227,59 @@ function CountryDropdown({ value, onChange, countryLabel }) {
         type="button"
         onClick={() => { setOpen((o) => !o); setSearch(""); }}
         style={{
-          width: "100%",
-          padding: "12px 16px",
-          background: "#1a1a1a",
-          border: "1px solid #333",
-          borderRadius: 6,
-          color: selected ? "#fff" : "#666",
-          fontFamily: "'Courier New', monospace",
-          fontSize: 13,
+          ...INPUT_STYLE,
           cursor: "pointer",
           textAlign: "left",
           display: "flex",
           alignItems: "center",
           gap: 10,
+          border: open ? "1px solid #000" : "1px solid #ddd",
         }}
       >
         {selected ? (
           <>
             <span>{selected.flag}</span>
-            <span>{selected.name}</span>
+            <span style={{ flex: 1 }}>{selected.name}</span>
           </>
         ) : (
-          <span>{countryLabel}</span>
+          <span style={{ flex: 1, color: "#aaa" }}>{s.countryPlaceholder}</span>
         )}
-        <span style={{ marginLeft: "auto", color: "#666", fontSize: 10 }}>
-          {open ? "▲" : "▼"}
-        </span>
+        <span style={{ color: "#888", fontSize: 10 }}>{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            right: 0,
-            background: "#1a1a1a",
-            border: "1px solid #333",
-            borderRadius: 6,
-            zIndex: 500,
-            maxHeight: 240,
-            overflowY: "auto",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-          }}
-        >
-          <div style={{ padding: "8px 8px 4px" }}>
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 2px)",
+          left: 0,
+          right: 0,
+          background: "#fff",
+          border: "1px solid #000",
+          zIndex: 500,
+          maxHeight: 220,
+          overflowY: "auto",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+        }}>
+          <div style={{ padding: "8px 8px 4px", borderBottom: "1px solid #f0f0f0" }}>
             <input
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
+              placeholder={s.countrySearch}
               style={{
                 width: "100%",
-                padding: "8px 10px",
-                background: "#111",
-                border: "1px solid #333",
-                borderRadius: 4,
-                color: "#fff",
+                padding: "7px 10px",
+                border: "1px solid #ddd",
                 fontFamily: "'Courier New', monospace",
-                fontSize: 12,
+                fontSize: 11,
                 boxSizing: "border-box",
+                outline: "none",
+                color: "#000",
+                background: "#fff",
+                borderRadius: 0,
               }}
+              onFocus={(e) => { e.target.style.borderColor = "#000"; }}
+              onBlur={(e) => { e.target.style.borderColor = "#ddd"; }}
             />
           </div>
           {filtered.map((c) => (
@@ -276,19 +289,21 @@ function CountryDropdown({ value, onChange, countryLabel }) {
               onClick={() => { onChange(c.code); setOpen(false); }}
               style={{
                 width: "100%",
-                padding: "9px 14px",
-                background: c.code === value ? "#9966ff22" : "none",
+                padding: "9px 12px",
+                background: c.code === value ? "#f0f0f0" : "none",
                 border: "none",
+                borderLeft: c.code === value ? "3px solid #000" : "3px solid transparent",
                 cursor: "pointer",
                 textAlign: "left",
-                color: c.code === value ? "#9966ff" : "#ccc",
+                color: "#000",
                 fontFamily: "'Courier New', monospace",
-                fontSize: 12,
+                fontSize: 11,
+                fontWeight: c.code === value ? 900 : 400,
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
               }}
-              onMouseEnter={(e) => { if (c.code !== value) e.currentTarget.style.background = "#ffffff0d"; }}
+              onMouseEnter={(e) => { if (c.code !== value) e.currentTarget.style.background = "#f8f8f8"; }}
               onMouseLeave={(e) => { if (c.code !== value) e.currentTarget.style.background = "none"; }}
             >
               <span>{c.flag}</span>
@@ -296,8 +311,8 @@ function CountryDropdown({ value, onChange, countryLabel }) {
             </button>
           ))}
           {filtered.length === 0 && (
-            <div style={{ padding: "12px 14px", color: "#555", fontFamily: "'Courier New', monospace", fontSize: 12 }}>
-              No results
+            <div style={{ padding: "12px", color: "#aaa", fontFamily: "'Courier New', monospace", fontSize: 11 }}>
+              {s.countryNoResults}
             </div>
           )}
         </div>
@@ -318,17 +333,14 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
   const [success, setSuccess] = useState(false);
 
   const toggleRole = (idx) => {
-    setRoles((prev) =>
-      prev.includes(idx) ? prev.filter((r) => r !== idx) : [...prev, idx]
-    );
+    setRoles((prev) => prev.includes(idx) ? prev.filter((r) => r !== idx) : [...prev, idx]);
   };
+
+  const isValid = displayName.trim() && country && ageRange;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!displayName.trim()) return;
-    if (!country) return;
-    if (!ageRange) return;
-
+    if (!isValid) return;
     setSubmitting(true);
     setError("");
 
@@ -356,100 +368,83 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "#0a0a0a",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: "24px 16px",
-        overflowY: "auto",
-      }}
-    >
-      <div
-        style={{
-          background: "#111",
-          border: "1px solid #222",
-          borderRadius: 12,
-          padding: "40px 36px",
-          width: "100%",
-          maxWidth: 480,
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
-        }}
-      >
-        {/* Logo / brand mark */}
-        <div style={{ marginBottom: 28, textAlign: "center" }}>
-          <span
-            style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 11,
-              color: "#9966ff",
-              letterSpacing: "0.25em",
-              fontWeight: 900,
-            }}
-          >
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      background: "#fff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: "24px 16px",
+      overflowY: "auto",
+    }}>
+      <div style={{
+        background: "#fff",
+        border: "1px solid #000",
+        padding: "40px 36px",
+        width: "100%",
+        maxWidth: 500,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+      }}>
+
+        {/* Brand */}
+        <div style={{ marginBottom: 24, textAlign: "center" }}>
+          <span style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: 10,
+            color: "#000",
+            letterSpacing: "0.25em",
+            fontWeight: 900,
+          }}>
             CHASS1S
           </span>
         </div>
 
-        <h1
-          style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: 18,
-            color: "#fff",
-            fontWeight: 900,
-            letterSpacing: "0.04em",
-            margin: "0 0 8px",
-            textAlign: "center",
-          }}
-        >
+        {/* Heading */}
+        <h1 style={{
+          fontFamily: "'Georgia', serif",
+          fontSize: 22,
+          fontWeight: 900,
+          color: "#000",
+          margin: "0 0 8px",
+          textAlign: "center",
+          letterSpacing: "-0.01em",
+        }}>
           {s.heading}
         </h1>
-        <p
-          style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: 11,
-            color: "#777",
-            textAlign: "center",
-            margin: "0 0 32px",
-            letterSpacing: "0.06em",
-          }}
-        >
+        <p style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: 11,
+          color: "#888",
+          textAlign: "center",
+          margin: "0 0 32px",
+          letterSpacing: "0.04em",
+        }}>
           {s.subheading}
         </p>
 
+        {/* Divider */}
+        <div style={{ borderTop: "1px solid #e8e8e8", marginBottom: 28 }} />
+
         {success ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "32px 0",
-              fontFamily: "'Courier New', monospace",
-              fontSize: 13,
-              color: "#9966ff",
-              letterSpacing: "0.06em",
-            }}
-          >
+          <div style={{
+            textAlign: "center",
+            padding: "32px 0",
+            fontFamily: "'Georgia', serif",
+            fontSize: 16,
+            fontWeight: 700,
+            color: "#000",
+            letterSpacing: "0.02em",
+          }}>
             {s.successMsg}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+
             {/* Display Name */}
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 10,
-                  color: "#888",
-                  letterSpacing: "0.12em",
-                  marginBottom: 8,
-                }}
-              >
-                {s.nameLabel} *
-              </label>
+              <label style={LABEL_STYLE}>{s.nameLabel} *</label>
               <input
                 type="text"
                 value={displayName}
@@ -457,72 +452,41 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
                 placeholder={s.namePlaceholder}
                 required
                 autoFocus
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  background: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 13,
-                  boxSizing: "border-box",
-                  outline: "none",
-                }}
-                onFocus={(e) => { e.target.style.borderColor = "#9966ff"; }}
-                onBlur={(e) => { e.target.style.borderColor = "#333"; }}
+                style={INPUT_STYLE}
+                onFocus={(e) => { e.target.style.borderColor = "#000"; }}
+                onBlur={(e) => { e.target.style.borderColor = "#ddd"; }}
               />
             </div>
 
             {/* Country */}
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 10,
-                  color: "#888",
-                  letterSpacing: "0.12em",
-                  marginBottom: 8,
-                }}
-              >
-                {s.countryLabel} *
-              </label>
-              <CountryDropdown value={country} onChange={setCountry} countryLabel={s.countryLabel} />
+              <label style={LABEL_STYLE}>{s.countryLabel} *</label>
+              <CountryDropdown value={country} onChange={setCountry} s={s} />
             </div>
 
             {/* Age Range */}
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 10,
-                  color: "#888",
-                  letterSpacing: "0.12em",
-                  marginBottom: 8,
-                }}
-              >
-                {s.ageLabel} *
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {s.ageRanges.map((range, i) => (
+              <label style={LABEL_STYLE}>{s.ageLabel} *</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {s.ageRanges.map((range) => (
                   <button
-                    key={i}
+                    key={range}
                     type="button"
                     onClick={() => setAgeRange(range)}
                     style={{
-                      padding: "7px 14px",
-                      background: ageRange === range ? "#9966ff" : "#1a1a1a",
-                      border: `1px solid ${ageRange === range ? "#9966ff" : "#333"}`,
-                      borderRadius: 20,
-                      color: ageRange === range ? "#fff" : "#888",
+                      padding: "6px 12px",
+                      background: ageRange === range ? "#000" : "#fff",
+                      border: `1px solid ${ageRange === range ? "#000" : "#ddd"}`,
+                      color: ageRange === range ? "#fff" : "#555",
                       fontFamily: "'Courier New', monospace",
-                      fontSize: 11,
+                      fontSize: 10,
+                      fontWeight: ageRange === range ? 900 : 400,
                       cursor: "pointer",
                       letterSpacing: "0.05em",
-                      transition: "all 0.15s",
+                      borderRadius: 0,
                     }}
+                    onMouseEnter={(e) => { if (ageRange !== range) { e.currentTarget.style.borderColor = "#000"; e.currentTarget.style.color = "#000"; } }}
+                    onMouseLeave={(e) => { if (ageRange !== range) { e.currentTarget.style.borderColor = "#ddd"; e.currentTarget.style.color = "#555"; } }}
                   >
                     {range}
                   </button>
@@ -532,37 +496,30 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
 
             {/* Roles */}
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 10,
-                  color: "#888",
-                  letterSpacing: "0.12em",
-                  marginBottom: 8,
-                }}
-              >
+              <label style={LABEL_STYLE}>
                 {s.rolesLabel}{" "}
-                <span style={{ color: "#555" }}>({s.rolesOptional})</span>
+                <span style={{ color: "#ccc", fontWeight: 400 }}>({s.rolesOptional})</span>
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {s.roles.map((role, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => toggleRole(i)}
                     style={{
-                      padding: "7px 14px",
-                      background: roles.includes(i) ? "#9966ff22" : "#1a1a1a",
-                      border: `1px solid ${roles.includes(i) ? "#9966ff" : "#333"}`,
-                      borderRadius: 20,
-                      color: roles.includes(i) ? "#9966ff" : "#888",
+                      padding: "6px 12px",
+                      background: roles.includes(i) ? "#000" : "#fff",
+                      border: `1px solid ${roles.includes(i) ? "#000" : "#ddd"}`,
+                      color: roles.includes(i) ? "#fff" : "#555",
                       fontFamily: "'Courier New', monospace",
-                      fontSize: 11,
+                      fontSize: 10,
+                      fontWeight: roles.includes(i) ? 900 : 400,
                       cursor: "pointer",
                       letterSpacing: "0.05em",
-                      transition: "all 0.15s",
+                      borderRadius: 0,
                     }}
+                    onMouseEnter={(e) => { if (!roles.includes(i)) { e.currentTarget.style.borderColor = "#000"; e.currentTarget.style.color = "#000"; } }}
+                    onMouseLeave={(e) => { if (!roles.includes(i)) { e.currentTarget.style.borderColor = "#ddd"; e.currentTarget.style.color = "#555"; } }}
                   >
                     {role}
                   </button>
@@ -571,42 +528,31 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
             </div>
 
             {error && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  background: "#ff000011",
-                  border: "1px solid #ff000044",
-                  borderRadius: 6,
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 11,
-                  color: "#ff6666",
-                }}
-              >
+              <div style={{
+                padding: "10px 12px",
+                border: "1px solid #cc0000",
+                fontFamily: "'Courier New', monospace",
+                fontSize: 11,
+                color: "#cc0000",
+              }}>
                 {error}
               </div>
             )}
 
+            {/* Submit */}
             <button
               type="submit"
-              disabled={submitting || !displayName.trim() || !country || !ageRange}
+              disabled={submitting || !isValid}
               style={{
-                padding: "14px",
-                background: submitting || !displayName.trim() || !country || !ageRange
-                  ? "#333"
-                  : "#9966ff",
+                padding: "13px",
+                background: isValid && !submitting ? "#000" : "#e8e8e8",
                 border: "none",
-                borderRadius: 6,
-                color: submitting || !displayName.trim() || !country || !ageRange
-                  ? "#666"
-                  : "#fff",
+                color: isValid && !submitting ? "#fff" : "#aaa",
                 fontFamily: "'Courier New', monospace",
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 900,
                 letterSpacing: "0.1em",
-                cursor: submitting || !displayName.trim() || !country || !ageRange
-                  ? "not-allowed"
-                  : "pointer",
-                transition: "all 0.15s",
+                cursor: isValid && !submitting ? "pointer" : "not-allowed",
                 marginTop: 4,
               }}
             >
@@ -614,23 +560,23 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
             </button>
 
             {/* Terms */}
-            <p
-              style={{
-                fontFamily: "'Courier New', monospace",
-                fontSize: 9,
-                color: "#555",
-                textAlign: "center",
-                margin: 0,
-                letterSpacing: "0.06em",
-                lineHeight: 1.6,
-              }}
-            >
+            <p style={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: 9,
+              color: "#aaa",
+              textAlign: "center",
+              margin: 0,
+              letterSpacing: "0.04em",
+              lineHeight: 1.7,
+            }}>
               {s.terms}{" "}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "#9966ff", textDecoration: "none" }}>
+              <a href="/terms" target="_blank" rel="noopener noreferrer"
+                style={{ color: "#000", textDecoration: "underline" }}>
                 {s.termsLink}
               </a>{" "}
               {s.termsAnd}{" "}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#9966ff", textDecoration: "none" }}>
+              <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                style={{ color: "#000", textDecoration: "underline" }}>
                 {s.policyLink}
               </a>
               {s.termsDot}
