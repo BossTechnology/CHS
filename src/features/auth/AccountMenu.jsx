@@ -4,7 +4,7 @@ import { WorkspaceMembersModal } from "../workspace/WorkspaceMembersModal.jsx";
 import { LangDropdown } from "../../shared/ui/LangDropdown.jsx";
 
 function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang, setLang,
-  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory }) {
+  workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, t, chassisCount = 0 }) {
   const ref = useRef(null);
   const [buyOpen, setBuyOpen] = useState(false);
   const [workspaceExpanded, setWorkspaceExpanded] = useState(false);
@@ -26,8 +26,17 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
   const displayTokens = currentWorkspace
     ? (typeof wsTokens === "number" ? (wsTokens % 1 === 0 ? wsTokens : wsTokens.toFixed(2)) : "—")
     : tokens;
-  const contextLabel = currentWorkspace ? currentWorkspace.name : "Personal Account";
+  const contextLabel = currentWorkspace ? currentWorkspace.name : (t?.menuPersonal || 'Personal');
   const roleLabel = currentWorkspace?.role?.toUpperCase() || "";
+
+  // Avatar initials — prefer display_name, fall back to email
+  const rawSrc = profile?.display_name?.trim() || user?.email || '?';
+  const words = rawSrc.split(/\s+/).filter(Boolean);
+  const initials = words.length >= 2
+    ? (words[0][0] + words[1][0]).toUpperCase()
+    : rawSrc.slice(0, 2).toUpperCase();
+
+  const chassisLabel = `${t?.menuChassis || 'CHASSIS'} (${chassisCount})`;
 
   if (buyOpen) return (
     <TokenPurchaseModal
@@ -50,12 +59,26 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
       background: "#fff", border: "1px solid #000", minWidth: 260, zIndex: 300,
       boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
 
-      {/* User info */}
+      {/* User info — avatar + signed in as */}
       <div style={{ padding: "14px 18px", borderBottom: "1px solid #e8e8e8" }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.12em", marginBottom: 4 }}>SIGNED IN AS</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#000", wordBreak: "break-all",
-          fontFamily: "'Georgia', serif" }}>{user.email}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#000",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
+              fontWeight: 900, color: "#fff" }}>{initials}</span>
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
+              letterSpacing: "0.12em", marginBottom: 3 }}>
+              {t?.menuSignedInAs || 'SIGNED IN AS'}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#000",
+              fontFamily: "'Georgia', serif", overflow: "hidden",
+              textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {profile?.display_name || user.email}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Workspace switcher */}
@@ -66,7 +89,9 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
             justifyContent: "space-between", gap: 8 }}>
           <div>
             <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-              letterSpacing: "0.12em", marginBottom: 3 }}>CONTEXT</div>
+              letterSpacing: "0.12em", marginBottom: 3 }}>
+              {t?.menuWorkspace || 'WORKSPACE'}
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontFamily: "'Courier New', monospace", fontSize: 12, fontWeight: 900,
                 color: "#000" }}>{contextLabel}</span>
@@ -88,7 +113,7 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
                 borderLeft: !currentWorkspace ? "3px solid #000" : "3px solid transparent" }}
               onMouseEnter={e => { if (currentWorkspace) e.currentTarget.style.background = "#f5f5f5"; }}
               onMouseLeave={e => { if (currentWorkspace) e.currentTarget.style.background = "none"; }}>
-              Personal Account
+              {t?.menuPersonal || 'Personal'}
             </button>
             {/* Workspace list */}
             {workspaces.map(ws => (
@@ -123,24 +148,41 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
             <button onClick={() => { onCreateWorkspace(); setWorkspaceExpanded(false); onClose(); }}
               style={{ width: "100%", padding: "9px 18px 9px 28px", background: "none", border: "none",
                 borderTop: "1px solid #f0f0f0", cursor: "pointer", textAlign: "left",
-                fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888",
-                display: "flex", alignItems: "center", gap: 6 }}
+                fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888" }}
               onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
               onMouseLeave={e => e.currentTarget.style.background = "none"}>
-              <span style={{ fontSize: 14 }}>+</span> Create Workspace
+              {t?.menuAddWorkspace || '+ Work Space'}
             </button>
           </div>
         )}
       </div>
 
+      {/* Chassis count */}
+      <button onClick={() => { onOpenHistory(); onClose(); }}
+        style={{ width: "100%", padding: "10px 18px", background: "none", border: "none",
+          borderBottom: "1px solid #e8e8e8", cursor: "pointer", textAlign: "left",
+          fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 700,
+          letterSpacing: "0.08em", color: "#000" }}
+        onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+        onMouseLeave={e => e.currentTarget.style.background = "none"}>
+        {chassisLabel}
+      </button>
+
       {/* Token balance */}
       <div style={{ padding: "14px 18px", borderBottom: "1px solid #e8e8e8", background: "#f8f8f8" }}>
         <div style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-          letterSpacing: "0.12em", marginBottom: 6 }}>TOKEN BALANCE</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "#000", lineHeight: 1,
+          letterSpacing: "0.12em", marginBottom: 6 }}>
+          {t?.menuTokenBalance || 'TOKEN BALANCE'}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "#000", lineHeight: 1,
             fontFamily: "'Courier New', monospace" }}>{displayTokens}</span>
-          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#888" }}>TOKENS</span>
+          <button onClick={() => setBuyOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              fontFamily: "'Courier New', monospace", fontSize: 10, fontWeight: 900,
+              color: "#000", textDecoration: "underline" }}>
+            {t?.menuBuyMore || '+ Buy More'}
+          </button>
         </div>
       </div>
 
@@ -148,35 +190,20 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #e8e8e8" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#aaa",
-            letterSpacing: "0.12em" }}>LANGUAGE</span>
+            letterSpacing: "0.12em" }}>{t?.menuLanguage || 'LANGUAGE'}</span>
           <LangDropdown lang={lang} setLang={setLang} />
         </div>
       </div>
 
       {/* Actions */}
       <div style={{ padding: "6px 0" }}>
-        <button onClick={onOpenHistory}
-          style={{ width: "100%", padding: "10px 18px", background: "none", border: "none",
-            cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
-            fontSize: 11, color: "#000", fontWeight: 700, letterSpacing: "0.08em" }}
-          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
-          onMouseLeave={e => e.currentTarget.style.background = "none"}>
-          MY CHASSIS
-        </button>
-        <button onClick={() => setBuyOpen(true)}
-          style={{ width: "100%", padding: "10px 18px", background: "#000", border: "none",
-            cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
-            fontSize: 11, color: "#fff", fontWeight: 900, letterSpacing: "0.08em",
-            display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 14 }}>+</span> BUY TOKENS
-        </button>
         <button onClick={() => { onSignOut(); onClose(); }}
           style={{ width: "100%", padding: "10px 18px", background: "none", border: "none",
             cursor: "pointer", textAlign: "left", fontFamily: "'Courier New', monospace",
             fontSize: 11, color: "#000", fontWeight: 700, letterSpacing: "0.08em" }}
           onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
           onMouseLeave={e => e.currentTarget.style.background = "none"}>
-          SIGN OUT
+          {t?.menuSignOut || 'SIGN OUT'}
         </button>
       </div>
     </div>
