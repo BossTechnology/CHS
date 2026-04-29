@@ -246,7 +246,7 @@ function AuthModal({ onClose, onSuccess, initialMode = "signin", lang = "EN" }) 
       const { data: signUpData, error: err } = await supabase.auth.signUp({ email, password });
       if (err) {
         setError(classifyAuthError(err.message));
-      } else if (!signUpData.user || signUpData.user.identities?.length === 0) {
+      } else if (!signUpData || signUpData.identities?.length === 0) {
         setError("already_exists");
       } else {
         setSuccess(s.signUpSuccess);
