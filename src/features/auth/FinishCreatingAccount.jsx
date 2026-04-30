@@ -330,7 +330,6 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
   const [roles, setRoles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const toggleRole = (idx) => {
     setRoles((prev) => prev.includes(idx) ? prev.filter((r) => r !== idx) : [...prev, idx]);
@@ -363,8 +362,7 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
       return;
     }
 
-    setSuccess(true);
-    setTimeout(() => onComplete(), 1800);
+    onComplete();
   };
 
   const chipStyle = (active) => ({
@@ -401,19 +399,6 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
         boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
       }}>
 
-        {success ? (
-          <div style={{
-            textAlign: "center",
-            padding: "24px 0",
-            fontFamily: "'Georgia', serif",
-            fontSize: 16,
-            fontWeight: 700,
-            color: "#000",
-          }}>
-            {s.successMsg}
-          </div>
-        ) : (
-          <>
           {/* Logo */}
           <div style={{ marginBottom: 16, textAlign: "center" }}>
             <img src="/logo.png" alt="CHASS1S" style={{ height: 32, objectFit: "contain" }} />
@@ -520,21 +505,22 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
 
             {/* Terms — above button */}
             <p style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: 11,
-              color: "#444",
+              fontFamily: "'Courier New', monospace",
+              fontSize: 9,
+              color: "#aaa",
               textAlign: "center",
               margin: 0,
+              letterSpacing: "0.04em",
               lineHeight: 1.7,
             }}>
               {s.terms}{" "}
               <a href="/terms" target="_blank" rel="noopener noreferrer"
-                style={{ color: "#9966ff", textDecoration: "underline" }}>
+                style={{ color: "#000", textDecoration: "underline" }}>
                 {s.termsLink}
               </a>{" "}
               {s.termsAnd}{" "}
               <a href="/privacy" target="_blank" rel="noopener noreferrer"
-                style={{ color: "#9966ff", textDecoration: "underline" }}>
+                style={{ color: "#000", textDecoration: "underline" }}>
                 {s.policyLink}
               </a>
             </p>
@@ -559,8 +545,6 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
             </button>
 
           </form>
-          </>
-        )}
       </div>
     </div>
   );
