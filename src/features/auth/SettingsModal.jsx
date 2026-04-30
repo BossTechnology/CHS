@@ -293,21 +293,28 @@ function SettingsModal({ user, profile, lang, t, onClose, onSignOut, onRefreshPr
               onFocus={inputFocus} onBlur={inputBlur} style={INPUT_BASE} />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", ...LABEL_MONO, marginBottom: 5 }}>COUNTRY</label>
-            <select value={country} onChange={(e) => setCountry(e.target.value)}
-              style={{ ...INPUT_BASE, cursor: "pointer" }}>
-              <option value="">— Select country —</option>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", ...LABEL_MONO, marginBottom: 6 }}>AGE RANGE</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {ageRangesForLang.map((r) => chipBtn(r, ageRange === r, () => setAgeRange(r)))}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ display: "block", ...LABEL_MONO, marginBottom: 5 }}>COUNTRY</label>
+              <select value={country} onChange={(e) => setCountry(e.target.value)}
+                onFocus={inputFocus} onBlur={inputBlur}
+                style={{ ...INPUT_BASE, cursor: "pointer" }}>
+                <option value="">— Select —</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", ...LABEL_MONO, marginBottom: 5 }}>AGE RANGE</label>
+              <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)}
+                onFocus={inputFocus} onBlur={inputBlur}
+                style={{ ...INPUT_BASE, cursor: "pointer", color: ageRange ? "#000" : "#aaa" }}>
+                <option value="">—</option>
+                {ageRangesForLang.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </div>
           </div>
 
