@@ -401,37 +401,6 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
         boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
       }}>
 
-        {/* Logo */}
-        <div style={{ marginBottom: 16, textAlign: "center" }}>
-          <img src="/logo.png" alt="CHASS1S" style={{ height: 32, objectFit: "contain" }} />
-        </div>
-
-        {/* Heading = greeting */}
-        <h1 style={{
-          fontFamily: "'Georgia', serif",
-          fontSize: 19,
-          fontWeight: 900,
-          color: "#000",
-          margin: "0 0 4px",
-          textAlign: "center",
-          letterSpacing: "-0.01em",
-        }}>
-          {s.greeting}
-        </h1>
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 10,
-          color: "#aaa",
-          textAlign: "center",
-          margin: "0 0 18px",
-          letterSpacing: "0.04em",
-        }}>
-          {s.subheading}
-        </p>
-
-        {/* Divider */}
-        <div style={{ borderTop: "1px solid #e8e8e8", marginBottom: 18 }} />
-
         {success ? (
           <div style={{
             textAlign: "center",
@@ -444,6 +413,37 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
             {s.successMsg}
           </div>
         ) : (
+          <>
+          {/* Logo */}
+          <div style={{ marginBottom: 16, textAlign: "center" }}>
+            <img src="/logo.png" alt="CHASS1S" style={{ height: 32, objectFit: "contain" }} />
+          </div>
+
+          {/* Heading = greeting */}
+          <h1 style={{
+            fontFamily: "'Georgia', serif",
+            fontSize: 19,
+            fontWeight: 900,
+            color: "#000",
+            margin: "0 0 4px",
+            textAlign: "center",
+            letterSpacing: "-0.01em",
+          }}>
+            {s.greeting}
+          </h1>
+          <p style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: 10,
+            color: "#aaa",
+            textAlign: "center",
+            margin: "0 0 18px",
+            letterSpacing: "0.04em",
+          }}>
+            {s.subheading}
+          </p>
+
+          {/* Divider */}
+          <div style={{ borderTop: "1px solid #e8e8e8", marginBottom: 18 }} />
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
             {/* Display Name */}
@@ -561,6 +561,7 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
             </button>
 
           </form>
+          </>
         )}
       </div>
     </div>
