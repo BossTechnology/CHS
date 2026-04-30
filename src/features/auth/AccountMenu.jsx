@@ -228,7 +228,7 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
               onMouseLeave={e => e.currentTarget.style.background = "none"}>
               {item.icon}
               <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
-                fontWeight: 700, letterSpacing: "0.12em", color: "#000" }}>
+                letterSpacing: "0.12em", color: "#000" }}>
                 {item.label}
               </span>
             </button>
