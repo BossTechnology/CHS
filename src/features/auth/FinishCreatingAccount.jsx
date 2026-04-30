@@ -3,7 +3,7 @@ import supabase from "../../lib/supabase.ts";
 
 const FINISH_STRINGS = {
   EN: {
-    greeting: "Hello, where are you visiting from?",
+    greeting: "Hi, where are you visiting from?",
     heading: "Finish Creating Your Account",
     subheading: "Just a few details to personalize your experience.",
     nameLabel: "NAME / NICKNAME / TAG",
@@ -17,11 +17,11 @@ const FINISH_STRINGS = {
     submitBtn: "FINISH CREATING ACCOUNT",
     submitting: "SAVING...",
     successMsg: "All set! Welcome to CHASS1S.",
-    terms: "By continuing you agree to our",
-    termsLink: "Terms of Service",
-    termsAnd: "and",
+    terms: `By clicking "Finish creating account", you agree to our`,
+    termsLink: "Terms",
+    termsAnd: "and have read our",
     policyLink: "Privacy Policy",
-    termsDot: ".",
+    termsDot: "",
     ageRanges: ["Under 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
     roles: ["Student", "Entrepreneur", "Business Owner", "Corporate", "Gov Employee", "Artist / Creative", "Consultant"],
   },
@@ -40,16 +40,16 @@ const FINISH_STRINGS = {
     submitBtn: "FINALIZAR CREACIÓN DE CUENTA",
     submitting: "GUARDANDO...",
     successMsg: "¡Listo! Bienvenido a CHASS1S.",
-    terms: "Al continuar aceptas nuestros",
-    termsLink: "Términos de Servicio",
-    termsAnd: "y",
+    terms: `Al hacer clic en "Terminar de crear cuenta", aceptas nuestros`,
+    termsLink: "Términos",
+    termsAnd: "y confirmas haber leído nuestra",
     policyLink: "Política de Privacidad",
-    termsDot: ".",
+    termsDot: "",
     ageRanges: ["Menor de 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
     roles: ["Estudiante", "Emprendedor", "Dueño de Negocio", "Corporativo", "Empleado Gov.", "Artista / Creativo", "Consultor"],
   },
   FR: {
-    greeting: "Bonjour, d'où venez-vous ?",
+    greeting: "Salut, d'où venez-vous ?",
     heading: "Finalisez la Création de Votre Compte",
     subheading: "Quelques détails pour personnaliser votre expérience.",
     nameLabel: "NOM / PSEUDO / TAG",
@@ -63,16 +63,16 @@ const FINISH_STRINGS = {
     submitBtn: "TERMINER LA CRÉATION DU COMPTE",
     submitting: "ENREGISTREMENT...",
     successMsg: "C'est parti ! Bienvenue sur CHASS1S.",
-    terms: "En continuant, vous acceptez nos",
-    termsLink: "Conditions d'Utilisation",
-    termsAnd: "et notre",
+    terms: `En cliquant sur « Terminer la création du compte », vous acceptez nos`,
+    termsLink: "Conditions",
+    termsAnd: "et confirmez avoir lu notre",
     policyLink: "Politique de Confidentialité",
-    termsDot: ".",
+    termsDot: "",
     ageRanges: ["Moins de 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
     roles: ["Étudiant", "Entrepreneur", "Chef d'Entreprise", "Entreprise", "Employé Gov.", "Artiste / Créatif", "Consultant"],
   },
   PT: {
-    greeting: "Olá, de onde você está nos visitando?",
+    greeting: "Oi, de onde você está nos visitando?",
     heading: "Conclua a Criação da sua Conta",
     subheading: "Apenas alguns detalhes para personalizar sua experiência.",
     nameLabel: "NOME / APELIDO / TAG",
@@ -86,11 +86,11 @@ const FINISH_STRINGS = {
     submitBtn: "CONCLUIR CRIAÇÃO DE CONTA",
     submitting: "SALVANDO...",
     successMsg: "Pronto! Bem-vindo ao CHASS1S.",
-    terms: "Ao continuar, você concorda com nossos",
-    termsLink: "Termos de Serviço",
-    termsAnd: "e",
+    terms: `Ao clicar em "Terminar de criar conta", você concorda com nossos`,
+    termsLink: "Termos",
+    termsAnd: "e confirma ter lido nossa",
     policyLink: "Política de Privacidade",
-    termsDot: ".",
+    termsDot: "",
     ageRanges: ["Menos de 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
     roles: ["Estudante", "Empreendedor", "Dono de Negócio", "Corporativo", "Funcionário Gov.", "Artista / Criativo", "Consultor"],
   },
@@ -520,25 +520,23 @@ function FinishCreatingAccount({ user, lang, onComplete }) {
 
             {/* Terms — above button */}
             <p style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 9,
-              color: "#aaa",
+              fontFamily: "'Georgia', serif",
+              fontSize: 11,
+              color: "#444",
               textAlign: "center",
               margin: 0,
-              letterSpacing: "0.04em",
               lineHeight: 1.7,
             }}>
               {s.terms}{" "}
               <a href="/terms" target="_blank" rel="noopener noreferrer"
-                style={{ color: "#000", textDecoration: "underline" }}>
+                style={{ color: "#9966ff", textDecoration: "underline" }}>
                 {s.termsLink}
               </a>{" "}
               {s.termsAnd}{" "}
               <a href="/privacy" target="_blank" rel="noopener noreferrer"
-                style={{ color: "#000", textDecoration: "underline" }}>
+                style={{ color: "#9966ff", textDecoration: "underline" }}>
                 {s.policyLink}
               </a>
-              {s.termsDot}
             </p>
 
             {/* Submit */}
