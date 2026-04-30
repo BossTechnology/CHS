@@ -68,7 +68,7 @@ export default withNewRelic("anthropic", async function handler(req) {
     // Whitelist only the fields the client is allowed to influence.
     // Never let the client choose the model or set an unlimited token budget.
     const ALLOWED_MODEL = "claude-sonnet-4-5";
-    const MAX_TOKENS_CAP = 8192;
+    const MAX_TOKENS_CAP = 40000; // matches luxury tier max in TIER_CONFIG
 
     const { messages, system, max_tokens: clientMaxTokens } = body;
 
