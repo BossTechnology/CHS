@@ -89,11 +89,6 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
       {/* User info — avatar + name + lang dropdown */}
       <div style={{ padding: "12px 14px", borderBottom: "1px solid #e8e8e8" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#000",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
-              fontWeight: 900, color: "#fff" }}>{initials}</span>
-          </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#000",
               fontFamily: "'Georgia', serif", overflow: "hidden",
@@ -233,7 +228,7 @@ function AccountMenu({ user, profile, onSignOut, onClose, onRefreshProfile, lang
               onMouseLeave={e => e.currentTarget.style.background = "none"}>
               {item.icon}
               <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9,
-                fontWeight: 700, letterSpacing: "0.12em", color: "#000" }}>
+                letterSpacing: "0.12em", color: "#000" }}>
                 {item.label}
               </span>
             </button>
