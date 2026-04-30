@@ -1739,8 +1739,9 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
 
-  // ── Detect generation tab ──────────────────────────────────────────────────
+  // ── Detect generation / view tab ──────────────────────────────────────────
   const pendingGenId = new URLSearchParams(window.location.search).get("chassis_gen");
+  const pendingViewId = new URLSearchParams(window.location.search).get("chassis_view");
 
   // ── Viewport meta ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1755,11 +1756,15 @@ export default function App() {
       try { const s = JSON.parse(localStorage.getItem(pendingGenId) || "{}"); return s.lang || detectLanguage(); }
       catch { return detectLanguage(); }
     }
+    if (pendingViewId) {
+      try { const s = JSON.parse(localStorage.getItem(pendingViewId) || "{}"); return s.lang || detectLanguage(); }
+      catch { return detectLanguage(); }
+    }
     return detectLanguage();
   });
 
   // ── App state ──────────────────────────────────────────────────────────────
-  const [screen, setScreen] = useState(pendingGenId ? "loading" : "page1");
+  const [screen, setScreen] = useState(pendingGenId || pendingViewId ? "loading" : "page1");
   const [userInput, setUserInput] = useState("");
   const [selectedTier, setSelectedTier] = useState(null);
   const [chassisData, setChassisData] = useState(null);
@@ -1990,7 +1995,7 @@ export default function App() {
             "Authorization": `Bearer ${sessionToken}`,
           },
           body: JSON.stringify({
-            max_tokens: 8192,
+            max_tokens: tier.tokens,
             system: buildChassisSystemBlocks(),
             messages: [{ role: "user", content: buildChassisUserMessage(input, tier, currentLang) }],
           }),
@@ -2044,6 +2049,51 @@ export default function App() {
     if (storedLang) setLang(storedLang);
     runGeneration(input, tier, storedLang || lang, bpSelections || []);
   }, []);
+
+  // ── Load history chassis in this view tab (no re-generation) ─────────────
+  useEffect(() => {
+    if (!pendingViewId) return;
+    const stored = localStorage.getItem(pendingViewId);
+    localStorage.removeItem(pendingViewId);
+    if (!stored) { setScreen("page1"); return; }
+    let params;
+    try { params = JSON.parse(stored); } catch { setScreen("page1"); return; }
+    const { chassisData, tierId, beyondProfitSelections: bpSels, beyondProfitData: bpData, businessInput, lang: storedLang } = params;
+    if (!chassisData) { setScreen("page1"); return; }
+    if (storedLang) setLang(storedLang);
+    setChassisData(chassisData);
+    setSelectedTier(getTiers(storedLang || lang).find(t => t.id === tierId) || getTiers(lang)[0]);
+    setBeyondProfitSelections(bpSels || []);
+    if (bpData) setBeyondProfitData(bpData);
+    setUserInput(businessInput || "");
+    setScreen("page2");
+  }, []);
+
+  // ── openChassisInNewTab — opens a history result in a new tab ─────────────
+  const openChassisInNewTab = (ch) => {
+    const viewId = "chassis_view_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem(viewId, JSON.stringify({
+      chassisData: ch.chassis_data,
+      tierId: ch.tier,
+      beyondProfitSelections: ch.beyond_profit_selections || [],
+      beyondProfitData: ch.beyond_profit_data || null,
+      businessInput: ch.business_input || "",
+      lang: ch.lang || lang,
+    }));
+    const url = window.location.origin + window.location.pathname + "?chassis_view=" + viewId;
+    const newTab = window.open(url, "_blank");
+    if (!newTab) {
+      localStorage.removeItem(viewId);
+      if (ch.chassis_data) {
+        setChassisData(ch.chassis_data);
+        setSelectedTier(getTiers(lang).find(t => t.id === ch.tier) || getTiers(lang)[0]);
+        setBeyondProfitSelections(ch.beyond_profit_selections || []);
+        if (ch.beyond_profit_data) setBeyondProfitData(ch.beyond_profit_data);
+        setUserInput(ch.business_input || "");
+        setScreen("page2");
+      }
+    }
+  };
 
   // ── generateChassis — opens new tab, Page 1 stays ─────────────────────────
   const generateChassis = (input, tier, bpSelections = []) => {
@@ -2099,16 +2149,7 @@ export default function App() {
       {settingsOpen && user && <SettingsModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSettingsOpen(false)} onSignOut={handleSignOut} onRefreshProfile={() => fetchProfile(user.id)} />}
       {supportOpen && user && <SupportModal user={user} profile={profile} lang={lang} t={T[lang]} onClose={() => setSupportOpen(false)} />}
       {historyOpen && user && <ChassisHistoryModal user={user} onClose={() => setHistoryOpen(false)}
-        onOpenChassis={(ch) => {
-          if (ch.chassis_data) {
-            setChassisData(ch.chassis_data);
-            setSelectedTier(getTiers(lang).find(t => t.id === ch.tier) || getTiers(lang)[0]);
-            setBeyondProfitSelections(ch.beyond_profit_selections || []);
-            setUserInput(ch.business_input || "");
-            setScreen("page2");
-          }
-          setHistoryOpen(false);
-        }} />}
+        onOpenChassis={(ch) => { openChassisInNewTab(ch); setHistoryOpen(false); }} />}
     </>
   );
 
