@@ -99,7 +99,7 @@ export default withNewRelic("anthropic", async function handler(req) {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": "prompt-caching-2024-07-31",
+        "anthropic-beta": "prompt-caching-2024-07-31,output-128k-2025-02-19",
       },
       body: JSON.stringify(anthropicBody),
     });
