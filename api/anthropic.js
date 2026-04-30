@@ -1,7 +1,11 @@
 export const config = { runtime: 'edge' };
 import { checkRateLimit } from './_ratelimit.js'
+import { withNewRelic } from './_newrelic.js'
 
-const ALLOWED_ORIGIN = process.env.VITE_APP_URL || "https://chass1s.com";
+const _rawAppUrl = (process.env.VITE_APP_URL || "").trim();
+const ALLOWED_ORIGIN = _rawAppUrl.startsWith("https://")
+  ? _rawAppUrl.replace(/\/$/, "")
+  : "https://www.chass1s.com";
 
 const corsHeaders = (origin) => ({
   "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : "",
@@ -21,7 +25,7 @@ async function verifySupabaseJWT(token) {
   return data?.id ? data : null;
 }
 
-export default async function handler(req) {
+export default withNewRelic("anthropic", async function handler(req) {
   const origin = req.headers.get("origin") || "";
 
   if (req.method === "OPTIONS") {
@@ -61,6 +65,32 @@ export default async function handler(req) {
   try {
     const body = await req.json();
 
+    // Whitelist only the fields the client is allowed to influence.
+    // Never let the client choose the model or set an unlimited token budget.
+    const ALLOWED_MODEL = "claude-sonnet-4-5";
+    const MAX_TOKENS_CAP = 40000; // matches luxury tier max in TIER_CONFIG
+
+    const { messages, system, max_tokens: clientMaxTokens } = body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "messages is required" }), {
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+      });
+    }
+
+    const max_tokens = Math.min(
+      Number.isInteger(clientMaxTokens) && clientMaxTokens > 0 ? clientMaxTokens : MAX_TOKENS_CAP,
+      MAX_TOKENS_CAP
+    );
+
+    const anthropicBody = {
+      model: ALLOWED_MODEL,
+      max_tokens,
+      messages,
+      ...(system !== undefined ? { system } : {}),
+      stream: true,
+    };
+
     // Use streaming so the Edge function starts responding immediately,
     // avoiding the 25-second initial-response timeout.
     const upstream = await fetch("https://api.anthropic.com/v1/messages", {
@@ -69,8 +99,9 @@ export default async function handler(req) {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31,output-128k-2025-02-19",
       },
-      body: JSON.stringify({ ...body, stream: true }),
+      body: JSON.stringify(anthropicBody),
     });
 
     if (!upstream.ok) {
@@ -98,4 +129,4 @@ export default async function handler(req) {
       headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
     });
   }
-}
+});
