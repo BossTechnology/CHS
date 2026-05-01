@@ -1078,7 +1078,10 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
 
 // ─── LOADING ──────────────────────────────────────────────────────────────────
 function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview = "" }) {
+  const { isMobile } = useResponsive();
   const [step, setStep] = useState(0);
+  const [phraseIdx, setPhraseIdx] = useState(0);
+  const [displayed, setDisplayed] = useState("");
   const streaming = streamedChars > 0;
 
   useEffect(() => {
@@ -1091,12 +1094,48 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
     return () => clearInterval(iv);
   }, [streaming, t.loadingSteps.length]);
 
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setPhraseIdx(p => (p + 1) % t.charmingPhrases.length);
+      setDisplayed("");
+    }, 12000);
+    return () => clearInterval(iv);
+  }, [t.charmingPhrases.length]);
+
+  useEffect(() => {
+    const phrase = t.charmingPhrases[phraseIdx] ?? "";
+    if (displayed.length >= phrase.length) return;
+    const tv = setTimeout(
+      () => setDisplayed(phrase.slice(0, displayed.length + 1)),
+      35
+    );
+    return () => clearTimeout(tv);
+  }, [displayed, phraseIdx, t.charmingPhrases]);
+
+  const progress = streaming
+    ? 100
+    : Math.round((step / Math.max(t.loadingSteps.length - 1, 1)) * 100);
+
   return (
-    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 20px" }}>
-      <div style={{ textAlign: "center", maxWidth: 520 }}>
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#555", letterSpacing: "0.2em", marginBottom: 8 }}>CHASS1S · {t.tagline}</div>
-        {tierLabel && <div style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: "#444", letterSpacing: "0.15em", marginBottom: 32 }}>{tierLabel.toUpperCase()} CHASSIS</div>}
-        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 13, color: "#888", marginBottom: 8, letterSpacing: "0.06em" }}>{t.loadingTitle}</div>
+    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: isMobile ? "32px 16px" : "56px 20px" }}>
+      <div style={{ textAlign: "center", maxWidth: isMobile ? "100%" : 520 }}>
+        <img
+          src="/logo.png"
+          alt="CHASS1S"
+          style={{
+            width: isMobile ? 72 : 96,
+            height: "auto",
+            display: "block",
+            margin: "0 auto 24px",
+            opacity: 0.9,
+          }}
+        />
+        <div style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 10 : 13, color: "#555", letterSpacing: "0.18em", marginBottom: 20 }}>{t.tagline}</div>
+        {tierLabel && (
+          <div style={{ fontFamily: "'Courier New', monospace", fontSize: isMobile ? 12 : 15, color: "#fff", letterSpacing: "0.12em", marginBottom: 28, fontWeight: 700 }}>
+            {t.fabricatingPrefix} {tierLabel.toUpperCase()} CHASS1S
+          </div>
+        )}
         <div style={{ fontFamily: "'Georgia', serif", fontSize: 18, color: "#fff", marginBottom: 36, lineHeight: 1.5, fontStyle: "italic" }}>"{input}"</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start", maxWidth: 360, margin: "0 auto" }}>
           {t.loadingSteps.map((s, i) => (
@@ -1113,6 +1152,39 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
             {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", opacity: 0.3, animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
           </div>
         )}
+
+        {/* ── Charming Phrases ─────────────────────────────────── */}
+        <div style={{ maxWidth: isMobile ? "100%" : 400, margin: "40px auto 0", textAlign: "center" }}>
+          <div style={{
+            fontFamily:    "'Georgia', serif",
+            fontSize:      isMobile ? 13 : 15,
+            color:         "#555",
+            fontStyle:     "italic",
+            lineHeight:    1.8,
+            minHeight:     52,
+            letterSpacing: "0.01em",
+          }}>
+            {displayed}
+            <span style={{ opacity: 0.4, animation: "pulse 1s ease-in-out infinite" }}>|</span>
+          </div>
+        </div>
+
+        {/* ── Progress Meter ────────────────────────────────────── */}
+        <div style={{ maxWidth: isMobile ? "100%" : 400, margin: "28px auto 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#444", letterSpacing: "0.15em" }}>PROGRESS</span>
+            <span style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: "#444", letterSpacing: "0.1em" }}>{progress}%</span>
+          </div>
+          <div style={{ height: 2, background: "#1a1a1a", borderRadius: 1, overflow: "hidden" }}>
+            <div style={{
+              height:     "100%",
+              width:      `${progress}%`,
+              background: "#fff",
+              borderRadius: 1,
+              transition: "width 0.8s ease",
+            }} />
+          </div>
+        </div>
       </div>
       <style>{`@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}`}</style>
     </div>
