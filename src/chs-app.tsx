@@ -7,6 +7,7 @@ import {
   buildChassisUserMessage,
   buildBeyondProfitSystemBlocks,
   buildBeyondProfitUserMessage,
+  buildReFabricateUserMessage,
 } from "./features/generation/prompts";
 import { AuthModal } from "./features/auth/AuthModal.jsx";
 import { FinishCreatingAccount } from "./features/auth/FinishCreatingAccount.jsx";
@@ -1267,7 +1268,7 @@ function KBRsTab({ kbrs, t }) {
             <div key={i} style={{ borderBottom: "1px solid #e0e0e0" }}>
               <button onClick={() => toggle(`${area.area}-${i}`)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 4px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                 <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", minWidth: 28 }}>{String(i+1).padStart(2,"0")}</span>
-                <span style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: "#000", flexGrow: 1 }}>{kbr.kbr}</span>
+                <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, fontSize: isMobile ? 13 : 14, color: "#000", flexGrow: 1 }}>{kbr.kbr}</span>
                 <span style={{ fontFamily: "monospace", fontSize: 14, color: "#000" }}>{openKBR[`${area.area}-${i}`] ? "−" : "+"}</span>
               </button>
               {openKBR[`${area.area}-${i}`] && (
@@ -1345,7 +1346,9 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: pad }}>
       <div style={{ borderBottom: "3px solid #000", paddingBottom: 24, marginBottom: 36 }}>
         <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.02em" }}>{t.beyondProfitTab}</h2>
-        <p style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", margin: 0, letterSpacing: "0.08em" }}>{t.beyondProfitTabSub.toUpperCase()}</p>
+        <p style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#888", margin: 0, letterSpacing: "0.08em" }}>
+          {selectedOptions.map(s => t.bpOptions[s]).join(', ').toUpperCase()}
+        </p>
       </div>
 
       {selectedOptions.map(opt => {
@@ -1414,8 +1417,236 @@ function BeyondProfitTab({ bpData, selectedOptions, bpLoading, bpError, t, onRet
   );
 }
 
+// ─── MODE SELECTOR ────────────────────────────────────────────────────────────
+function ModeSelector({ t, onGoClick }) {
+  const [selectedMode, setSelectedMode] = useState('fabricate');
+  const modes = [
+    { id: 'fabricate', label: t.modeSelector.fabricate, icon: '⚙' },
+    { id: 'tune',      label: t.modeSelector.tune,      icon: '◈' },
+    { id: 'drive',     label: t.modeSelector.drive,     icon: '▶' },
+  ];
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ position:'relative' }}>
+        <select value={selectedMode} onChange={e => setSelectedMode(e.target.value)}
+          style={{ fontFamily:"'Courier New',monospace", fontSize:13, fontWeight:900,
+            letterSpacing:'0.1em', padding:'8px 36px 8px 14px',
+            border:'2px solid #000', borderRadius:2, background:'#000',
+            color:'#fff', cursor:'pointer', appearance:'none', WebkitAppearance:'none' }}>
+          {modes.map(m => (
+            <option key={m.id} value={m.id}>{m.icon}  {m.label.toUpperCase()}</option>
+          ))}
+        </select>
+        <span style={{ position:'absolute', right:10, top:'50%',
+          transform:'translateY(-50%)', color:'#fff', pointerEvents:'none', fontSize:10 }}>▾</span>
+      </div>
+      {selectedMode === 'fabricate' ? (
+        <button onClick={onGoClick}
+          style={{ fontFamily:"'Courier New',monospace", fontSize:13, fontWeight:900,
+            letterSpacing:'0.15em', padding:'8px 28px', background:'#fff',
+            color:'#000', border:'2px solid #000', cursor:'pointer', borderRadius:2 }}
+          onMouseEnter={e => { e.currentTarget.style.background='#000'; e.currentTarget.style.color='#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.color='#000'; }}>
+          {t.modeSelector.go}
+        </button>
+      ) : (
+        <span style={{ fontFamily:"'Courier New',monospace", fontSize:11,
+          color:'#aaa', letterSpacing:'0.1em', fontStyle:'italic' }}>
+          {t.modeSelector.comingSoon}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── RE-FABRICATE MODAL ───────────────────────────────────────────────────────
+function ReFabricateModal({ t, lang, currentTier, chassisData, beyondProfitSelections,
+    userInput, onClose, onReFabricate }) {
+  const tiers = getTiers(lang);
+  const [editedInput, setEditedInput] = useState(userInput);
+  const [selectedTierId, setSelectedTierId] = useState(currentTier?.id || 'compact');
+  const [bpSelections, setBpSelections] = useState([...beyondProfitSelections]);
+  const selectedTier = tiers.find(ti => ti.id === selectedTierId) || tiers[0];
+  const tokenCost = (TIER_TOKEN_COST[selectedTierId] || 1) + (bpSelections.length * BP_TOKEN_COST);
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.72)', zIndex:1000,
+        display:'flex', alignItems:'center', justifyContent:'center', padding:'24px 16px' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background:'#fff', width:'100%', maxWidth:640, maxHeight:'90vh',
+          overflowY:'auto', display:'flex', flexDirection:'column' }}>
+
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'20px 24px', borderBottom:'2px solid #000', background:'#000' }}>
+          <span style={{ fontFamily:"'Courier New',monospace", fontWeight:900, fontSize:14,
+              letterSpacing:'0.12em', color:'#fff' }}>
+            {t.reFabricate.title}
+          </span>
+          <button onClick={onClose} style={{ background:'none', border:'none',
+              color:'#aaa', fontSize:20, cursor:'pointer', lineHeight:1 }}>×</button>
+        </div>
+
+        <div style={{ padding:'24px', display:'flex', flexDirection:'column', gap:24 }}>
+
+          {/* Context notice */}
+          <div style={{ background:'#f8f8f8', border:'1px solid #e0e0e0', padding:'12px 16px' }}>
+            <span style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:'#555',
+                letterSpacing:'0.06em' }}>⚙  {t.reFabricate.contextNote}</span>
+          </div>
+
+          {/* Editable input */}
+          <div>
+            <div style={{ fontFamily:"'Courier New',monospace", fontSize:10, fontWeight:900,
+                letterSpacing:'0.15em', color:'#888', marginBottom:8 }}>
+              {t.reFabricate.originalInput}
+            </div>
+            <p style={{ fontFamily:"'Courier New',monospace", fontSize:10, color:'#aaa',
+                letterSpacing:'0.05em', margin:'0 0 8px' }}>{t.reFabricate.editHint}</p>
+            <textarea value={editedInput} onChange={e => setEditedInput(e.target.value)}
+              rows={4} style={{ width:'100%', padding:'12px 14px', fontFamily:"'Georgia',serif",
+                fontSize:14, border:'2px solid #d0d0d0', outline:'none', resize:'vertical',
+                boxSizing:'border-box', lineHeight:1.7 }} />
+          </div>
+
+          {/* Tier selector */}
+          <div>
+            <div style={{ fontFamily:"'Courier New',monospace", fontSize:10, fontWeight:900,
+                letterSpacing:'0.15em', color:'#888', marginBottom:12 }}>
+              {t.reFabricate.selectType}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+              {tiers.map(tier => {
+                const isSel = selectedTierId === tier.id;
+                return (
+                  <button key={tier.id} onClick={() => setSelectedTierId(tier.id)}
+                    style={{ padding:'10px 12px', background:isSel?'#000':'#fff',
+                      color:isSel?'#fff':'#000', border:isSel?'2px solid #000':'2px solid #d8d8d8',
+                      borderRadius:2, cursor:'pointer', textAlign:'left' }}>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontWeight:900,
+                        fontSize:11, letterSpacing:'0.1em' }}>{tier.label.toUpperCase()}</div>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontSize:9,
+                        color:isSel?'#888':'#aaa' }}>{TIER_TOKEN_COST[tier.id]} tokens</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Beyond Profit */}
+          <BeyondProfitSelector t={t} beyondProfitSelections={bpSelections}
+            setBeyondProfitSelections={setBpSelections} isMobile={false} />
+
+          {/* Confirm button */}
+          <button
+            onClick={() => onReFabricate(editedInput.trim(), selectedTier, bpSelections)}
+            disabled={!editedInput.trim()}
+            style={{ width:'100%', padding:'16px', border:'none', borderRadius:2,
+              fontFamily:"'Courier New',monospace", fontSize:13, fontWeight:900,
+              letterSpacing:'0.12em', background:editedInput.trim()?'#000':'#e8e8e8',
+              color:editedInput.trim()?'#fff':'#aaa',
+              cursor:editedInput.trim()?'pointer':'not-allowed' }}>
+            USE {tokenCost} TOKENS & {t.reFabricate.confirm}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CHASSIS PAGE HISTORY MODAL ───────────────────────────────────────────────
+function ChassisPageHistoryModal({ businessName, userId, t, onClose }) {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('chassis_history')
+        .select('id, created_at, tier, beyond_profit_selections, action_type')
+        .eq('user_id', userId)
+        .eq('business_name', businessName)
+        .order('created_at', { ascending: false });
+      setEntries(data || []);
+      setLoading(false);
+    })();
+  }, [businessName, userId]);
+
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US',
+    { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  const actionLabel = (type) => ({
+    fabricated:   t.chassisHistory.actionFabricated,
+    refabricated: t.chassisHistory.actionReFabricated,
+    tuned:        t.chassisHistory.actionTuned,
+  }[type] || type);
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.72)', zIndex:1000,
+        display:'flex', alignItems:'center', justifyContent:'center', padding:'24px 16px' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background:'#fff', width:'100%', maxWidth:580, maxHeight:'80vh',
+          overflowY:'auto', display:'flex', flexDirection:'column' }}>
+
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'18px 24px', borderBottom:'2px solid #000', background:'#000' }}>
+          <span style={{ fontFamily:"'Courier New',monospace", fontWeight:900, fontSize:13,
+              letterSpacing:'0.12em', color:'#fff' }}>{t.chassisHistory.title}</span>
+          <button onClick={onClose} style={{ background:'none', border:'none',
+              color:'#aaa', fontSize:20, cursor:'pointer' }}>×</button>
+        </div>
+
+        <div style={{ padding:'24px' }}>
+          {loading && <p style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:'#888' }}>LOADING...</p>}
+          {!loading && entries.length === 0 && (
+            <p style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:'#888' }}>
+              {t.chassisHistory.noHistory}</p>
+          )}
+          {entries.map((entry, i) => {
+            const bp = (entry.beyond_profit_selections || []);
+            return (
+              <div key={entry.id} style={{ borderBottom:'1px solid #e8e8e8', paddingBottom:16,
+                  marginBottom:16, opacity: i === 0 ? 1 : 0.85 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                  <span style={{ fontFamily:"'Courier New',monospace", fontSize:10, fontWeight:900,
+                      background:'#000', color:'#fff', padding:'2px 8px',
+                      letterSpacing:'0.1em' }}>{actionLabel(entry.action_type).toUpperCase()}</span>
+                  <span style={{ fontFamily:"'Courier New',monospace", fontSize:11,
+                      color:'#888' }}>{fmtDate(entry.created_at)}</span>
+                  {i === 0 && <span style={{ fontFamily:"'Courier New',monospace", fontSize:9,
+                      color:'#aaa', border:'1px solid #e0e0e0', padding:'1px 6px' }}>CURRENT</span>}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontSize:9,
+                        color:'#888', letterSpacing:'0.1em', marginBottom:2 }}>
+                      {t.chassisHistory.chassisType}
+                    </div>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontWeight:700,
+                        fontSize:11 }}>{entry.tier?.toUpperCase() || '—'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontSize:9,
+                        color:'#888', letterSpacing:'0.1em', marginBottom:2 }}>
+                      {t.chassisHistory.beyondProfit}
+                    </div>
+                    <div style={{ fontFamily:"'Courier New',monospace", fontSize:11 }}>
+                      {bp.length > 0 ? bp.join(', ') : t.chassisHistory.none}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── PAGE 2 ───────────────────────────────────────────────────────────────────
-function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyondProfitData, setBeyondProfitData, userInput, onNewChassis, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
+function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyondProfitData, setBeyondProfitData, userInput, onNewChassis, onReFabricate, user, profile, onOpenAuth, onSignOut, onRefreshProfile,
   workspaces, currentWorkspace, onSwitchWorkspace, onCreateWorkspace, onOpenHistory, onOpenAdmin, onOpenSettings, onOpenSupport, chassisCount = 0, lastChassisName = null }) {
   const t = T[lang];
   const { isMobile, isTablet } = useResponsive();
@@ -1423,6 +1654,8 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
   const [openSections, setOpenSections] = useState({});
   const [bpLoading, setBpLoading] = useState(false);
   const [bpError, setBpError] = useState(null);
+  const [reFabricateOpen, setReFabricateOpen] = useState(false);
+  const [chassisPageHistoryOpen, setChassisPageHistoryOpen] = useState(false);
 
   // Generate Beyond Profit data after Page2 mounts
   useEffect(() => {
@@ -1661,11 +1894,15 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
 
   const hasBeyondProfit = beyondProfitSelections && beyondProfitSelections.length > 0;
   const TABS_DATA = [
-    { id:"intro", label:t.tabs.intro, subtitle:t.tabs.introSub },
-    { id:"ADDIS", label:t.tabs.addis, subtitle:t.tabs.addisSub },
-    { id:"BLIPS", label:t.tabs.blips, subtitle:t.tabs.blipsSub },
-    { id:"kbrs", label:t.tabs.kbrs, subtitle:t.tabs.kbrsSub },
-    ...(hasBeyondProfit ? [{ id:"beyondProfit", label:t.beyondProfitTab, subtitle:t.beyondProfitTabSub }] : []),
+    { id:"intro",        label:t.tabs.intro,                                        subtitle:t.tabs.introSub },
+    { id:"ADDIS",        label:`${t.tabs.addis} (${addisTotal})`,                   subtitle:t.tabs.addisSub },
+    { id:"BLIPS",        label:`${t.tabs.blips} (${blipsTotal})`,                   subtitle:t.tabs.blipsSub },
+    { id:"kbrs",         label:`${t.tabs.kbrs} (${kbrsTotal})`,                     subtitle:t.tabs.kbrsSub },
+    ...(hasBeyondProfit ? [{
+      id:"beyondProfit",
+      label:`${t.beyondProfitTab} (${beyondProfitSelections.length})`,
+      subtitle: beyondProfitSelections.map(s => t.bpOptions[s]).join(', '),
+    }] : []),
   ];
   return (
     <div style={{ fontFamily:"'Georgia',serif", minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column" }}>
@@ -1696,29 +1933,26 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
               <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
                 <span style={{ fontSize:22, fontWeight:900, color:"#000", letterSpacing:"-0.02em" }}>{business.name}</span>
                 {tier&&<span style={{ fontFamily:"'Courier New',monospace", fontSize:10, fontWeight:900, letterSpacing:"0.12em", background:"#000", color:"#fff", padding:"3px 8px" }}>{tier.label.toUpperCase()}</span>}
+                {/* History icon */}
+                <button onClick={() => setChassisPageHistoryOpen(true)}
+                  title={t.chassisHistory?.title}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center',
+                    width:28, height:28, border:'1px solid #d0d0d0', background:'#fff',
+                    borderRadius:2, cursor:'pointer', fontSize:14, lineHeight:1,
+                    transition:'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='#000'; e.currentTarget.style.borderColor='#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.borderColor='#d0d0d0'; }}>🕐
+                </button>
               </div>
               <div style={{ fontFamily:"'Courier New',monospace", fontSize:11, color:"#888", letterSpacing:"0.08em", marginTop:4 }}>
                 {[business.location, business.established?`EST. ${business.established}`:null, business.type?.toUpperCase()].filter(Boolean).join(" · ")}
               </div>
             </div>
-            {/* Counts */}
-            <div style={{ display:"flex", alignItems:"center", gap: isMobile ? 14 : 20, flexWrap: "wrap" }}>
-              {[{label:"ADDIS",value:addisTotal},{label:"BLIPS",value:blipsTotal},{label:"KBRs",value:kbrsTotal}].map(s=>(
-                <div key={s.label} style={{ textAlign:"center" }}>
-                  <div style={{ fontWeight:900, fontSize:20, color:"#000", lineHeight:1 }}>{s.value}</div>
-                  <div style={{ fontFamily:"'Courier New',monospace", fontSize:10, color:"#888", marginTop:3, letterSpacing:"0.1em" }}>{s.label}</div>
-                </div>
-              ))}
-              {/* Subtle separator */}
-              <div style={{ width: 1, height: 36, background: "#e0e0e0" }} />
-              {/* Controlled / Uncontrolled percentages */}
-              {[{label:"CONTROLLED",value:controlledPct},{label:"UNCONTROLLED",value:uncontrolledPct}].map(s=>(
-                <div key={s.label} style={{ textAlign:"center" }}>
-                  <div style={{ fontWeight:900, fontSize:20, color:"#000", lineHeight:1 }}>{s.value}%</div>
-                  <div style={{ fontFamily:"'Courier New',monospace", fontSize:10, color:"#888", marginTop:3, letterSpacing:"0.1em" }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
+            {/* Mode Selector — replaces stats block */}
+            <ModeSelector
+              t={t}
+              onGoClick={() => setReFabricateOpen(true)}
+            />
           </div>
 
           {/* Tabs */}
@@ -1758,6 +1992,29 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
         )}
       </div>
 
+      {reFabricateOpen && (
+        <ReFabricateModal
+          t={t}
+          lang={lang}
+          currentTier={tier}
+          chassisData={chassisData}
+          beyondProfitSelections={beyondProfitSelections}
+          userInput={userInput}
+          onClose={() => setReFabricateOpen(false)}
+          onReFabricate={(newInput, newTier, newBP) => {
+            setReFabricateOpen(false);
+            onReFabricate(newInput, newTier, newBP, chassisData);
+          }}
+        />
+      )}
+      {chassisPageHistoryOpen && user && (
+        <ChassisPageHistoryModal
+          businessName={business.name}
+          userId={user.id}
+          t={t}
+          onClose={() => setChassisPageHistoryOpen(false)}
+        />
+      )}
       <AppFooter t={t}/>
     </div>
   );
@@ -1958,7 +2215,7 @@ export default function App() {
   // Backed by the consume_and_save_chassis RPC (migration 003). Either both
   // sides land or neither does, so the user can never pay tokens without a
   // history record being persisted.
-  const consumeAndSave = async (parsed, tier, input, bpSelections, currentLang) => {
+  const consumeAndSave = async (parsed, tier, input, bpSelections, currentLang, actionType = 'fabricated') => {
     const u = userRef.current;
     const p = profileRef.current;
     if (!u) return { ok: false, reason: "no_user" };
@@ -1975,6 +2232,7 @@ export default function App() {
       p_lang: currentLang,
       p_chassis_data: parsed,
       p_beyond_profit_selections: bpSelections,
+      p_action_type: actionType,
     });
 
     if (rpcErr) {
@@ -2038,7 +2296,7 @@ export default function App() {
   };
 
   // ── Core generation logic ─────────────────────────────────────────────────
-  const runGeneration = async (input, tier, currentLang, bpSelections) => {
+  const runGeneration = async (input, tier, currentLang, bpSelections, existingChassis = null, actionType = 'fabricated') => {
     try {
       const { data: { session: genSession } } = await supabase.auth.getSession();
       const sessionToken = genSession?.access_token;
@@ -2077,7 +2335,9 @@ export default function App() {
           body: JSON.stringify({
             max_tokens: tier.tokens,
             system: buildChassisSystemBlocks(),
-            messages: [{ role: "user", content: buildChassisUserMessage(input, tier, currentLang) }],
+            messages: [{ role: "user", content: existingChassis
+              ? buildReFabricateUserMessage(userInput, input, tier, currentLang, bpSelections, existingChassis)
+              : buildChassisUserMessage(input, tier, currentLang) }],
           }),
         });
         setStreamedChars(0);
@@ -2097,7 +2357,7 @@ export default function App() {
       // Persist + charge atomically BEFORE rendering Page2. If this fails,
       // the user keeps their tokens and sees an error instead of a result
       // they were charged for but cannot retrieve from history.
-      const result = await consumeAndSave(parsed, tier, input, bpSelections, currentLang);
+      const result = await consumeAndSave(parsed, tier, input, bpSelections, currentLang, actionType);
       if (!result.ok) {
         const msg =
           result.reason === "insufficient_balance" ? "Insufficient token balance." :
@@ -2122,12 +2382,12 @@ export default function App() {
     let params;
     try { params = JSON.parse(stored); } catch { setScreen("page1"); return; }
     localStorage.removeItem(pendingGenId);
-    const { input, tier, bpSelections, lang: storedLang } = params;
+    const { input, tier, bpSelections, lang: storedLang, existingChassis, actionType } = params;
     setUserInput(input);
     setSelectedTier(tier);
     setBeyondProfitSelections(bpSelections || []);
     if (storedLang) setLang(storedLang);
-    runGeneration(input, tier, storedLang || lang, bpSelections || []);
+    runGeneration(input, tier, storedLang || lang, bpSelections || [], existingChassis || null, actionType || 'fabricated');
   }, []);
 
   // ── Load history chassis in this view tab (no re-generation) ─────────────
@@ -2189,6 +2449,25 @@ export default function App() {
       setBeyondProfitSelections(bpSelections); setBeyondProfitData(null);
       setScreen("loading");
       runGeneration(input, tier, lang, bpSelections);
+    }
+  };
+
+  // ── Re-fabricate chassis — opens new tab with existing chassis as context ──
+  const reFabricateChassis = (newInput, tier, bpSelections, existingChassisData) => {
+    const genId = 'chassis_gen_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem(genId, JSON.stringify({
+      input: newInput, tier, bpSelections, lang,
+      existingChassis: existingChassisData,
+      actionType: 'refabricated',
+    }));
+    const newTabUrl = window.location.origin + window.location.pathname + '?chassis_gen=' + genId;
+    const newTab = window.open(newTabUrl, '_blank');
+    if (!newTab) {
+      localStorage.removeItem(genId);
+      setUserInput(newInput); setSelectedTier(tier);
+      setBeyondProfitSelections(bpSelections); setBeyondProfitData(null);
+      setScreen('loading');
+      runGeneration(newInput, tier, lang, bpSelections, existingChassisData, 'refabricated');
     }
   };
 
@@ -2285,6 +2564,7 @@ export default function App() {
       <Page2 chassisData={chassisData} tier={selectedTier} lang={lang} setLang={setLang}
         beyondProfitSelections={beyondProfitSelections} beyondProfitData={beyondProfitData}
         setBeyondProfitData={setBeyondProfitData} userInput={userInput} onNewChassis={resetToPage1}
+        onReFabricate={reFabricateChassis}
         {...authProps} />
       <Modals />
     </>

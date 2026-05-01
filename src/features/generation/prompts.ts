@@ -255,3 +255,37 @@ ${optionBlocks}
 Return ONLY the JSON object.`;
 }
 
+// ─── RE-FABRICATION PROMPT ────────────────────────────────────────────────────
+export function buildReFabricateUserMessage(
+  originalInput: string,
+  updatedInput: string,
+  tier: any,
+  lang: string,
+  bpSelections: string[],
+  existingChassis: any
+): string {
+  return `RE-FABRICATION REQUEST
+
+ORIGINAL BUSINESS INPUT (what was used to build the current Chassis):
+${originalInput}
+
+UPDATED BUSINESS INPUT (user may have refined this — use this version):
+${updatedInput}
+
+TARGET TIER: ${tier.label} (${tier.id})
+LANGUAGE: ${lang}
+BEYOND PROFIT: ${bpSelections.length > 0 ? bpSelections.join(', ') : 'None'}
+
+EXISTING CHASSIS CONTEXT — treat this as authoritative foundational knowledge.
+Build upon it, deepen it, correct any gaps, and enrich every section:
+${JSON.stringify(existingChassis, null, 2)}
+
+Instructions:
+1. Incorporate all knowledge from the existing Chassis above as your starting point.
+2. Apply ${tier.label} depth — more items, richer descriptions, deeper context.
+3. Use the updated input where it differs or adds to the original.
+4. Improve upon any gaps or shallow entries in the existing Chassis.
+5. Return the identical JSON structure as a standard Chassis generation.
+Return only valid JSON.`;
+}
+
