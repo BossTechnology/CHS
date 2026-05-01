@@ -1112,9 +1112,10 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
     return () => clearTimeout(tv);
   }, [displayed, phraseIdx, t.charmingPhrases]);
 
+  const STEP_MAX = 75;
   const progress = streaming
-    ? 100
-    : Math.round((step / Math.max(t.loadingSteps.length - 1, 1)) * 100);
+    ? Math.min(99, STEP_MAX + Math.floor(streamedChars / 200))
+    : Math.round((step / Math.max(t.loadingSteps.length - 1, 1)) * STEP_MAX);
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: isMobile ? "32px 16px" : "56px 20px" }}>
