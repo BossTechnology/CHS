@@ -2070,6 +2070,9 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
   if (stopReason === "max_tokens") {
     throw new Error("La respuesta excedió el límite de tokens para este tier. Intenta con una descripción de negocio más breve, o selecciona un tier superior (Mid-Size, Executive o Luxury) para mayor capacidad.");
   }
+  if (!messageStopReceived && text.length > 0) {
+    throw new Error("La respuesta fue cortada antes de completarse — posible timeout de red. Intenta de nuevo.");
+  }
   return text;
 }
 
@@ -2336,7 +2339,7 @@ export default function App() {
             max_tokens: tier.tokens,
             system: buildChassisSystemBlocks(),
             messages: [{ role: "user", content: existingChassis
-              ? buildReFabricateUserMessage(userInput, input, tier, currentLang, bpSelections, existingChassis)
+              ? buildReFabricateUserMessage(input, input, tier, currentLang, bpSelections, existingChassis)
               : buildChassisUserMessage(input, tier, currentLang) }],
           }),
         });
