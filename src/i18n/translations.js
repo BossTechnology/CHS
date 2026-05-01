@@ -585,10 +585,10 @@ export const T = {
 };
 
 export const TIER_CONFIG = [
-  { id: "compact", tokens: 16000, addisCount: "5–7", blipsCount: "4–6", kbrCount: "3–4", descLength: "1 sentence max per field", extras: "" },
-  { id: "midsize", tokens: 20000, addisCount: "8–10", blipsCount: "6–8", kbrCount: "4–5", descLength: "1–2 sentences per field", extras: "Include 2–3 real-world factors per relevant BLIPS section." },
-  { id: "executive", tokens: 28000, addisCount: "10–12", blipsCount: "8–10", kbrCount: "5–6", descLength: "2 sentences per field", extras: "Include 3–4 real-world factors per relevant BLIPS section. Add industry-specific benchmarks to KBR targets." },
-  { id: "luxury", tokens: 40000, addisCount: "12–15", blipsCount: "10–12", kbrCount: "6–7", descLength: "2–3 sentences per field with specific business context", extras: `Include 4–5 real-world factors per relevant BLIPS section with detailed impact descriptions.\nAlso add these extra top-level JSON fields:\n"benefits": { "BizOps": "paragraph", "Logistics": "paragraph", "Inventory": "paragraph", "Production": "paragraph", "Sales": "paragraph" },\n"risks": [{ "title": "Risk title", "area": "ADDIS or BLIPS area", "severity": "High/Medium/Low", "description": "What this risk is and how Chassis detects it" }],\n"quickWins": [{ "title": "Quick win title", "description": "Specific immediate observability improvement", "impact": "Expected business impact" }]\nGenerate 5 risks and 5 quick wins.` },
+  { id: "compact", tokens: 64000, addisCount: "5–7", blipsCount: "4–6", kbrCount: "3–4", descLength: "1 sentence max per field", extras: "" },
+  { id: "midsize", tokens: 64000, addisCount: "8–10", blipsCount: "6–8", kbrCount: "4–5", descLength: "1–2 sentences per field", extras: "Include 2–3 real-world factors per relevant BLIPS section." },
+  { id: "executive", tokens: 64000, addisCount: "10–12", blipsCount: "8–10", kbrCount: "5–6", descLength: "2 sentences per field", extras: "Include 3–4 real-world factors per relevant BLIPS section. Add industry-specific benchmarks to KBR targets." },
+  { id: "luxury", tokens: 64000, addisCount: "12–15", blipsCount: "10–12", kbrCount: "6–7", descLength: "2–3 sentences per field with specific business context", extras: `Include 4–5 real-world factors per relevant BLIPS section with detailed impact descriptions.\nAlso add these extra top-level JSON fields:\n"benefits": { "BizOps": "paragraph", "Logistics": "paragraph", "Inventory": "paragraph", "Production": "paragraph", "Sales": "paragraph" },\n"risks": [{ "title": "Risk title", "area": "ADDIS or BLIPS area", "severity": "High/Medium/Low", "description": "What this risk is and how Chassis detects it" }],\n"quickWins": [{ "title": "Quick win title", "description": "Specific immediate observability improvement", "impact": "Expected business impact" }]\nGenerate 5 risks and 5 quick wins.` },
 ];
 
 export function getTiers(lang) {
