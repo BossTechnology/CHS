@@ -1775,6 +1775,7 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
   let buffer = "";
   let text = "";
   let messageStopReceived = false;
+  let stopReason: string | null = null;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -1789,6 +1790,9 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
         const evt = JSON.parse(payload);
         if (evt.type === "error") {
           throw new Error(evt.error?.message || `Anthropic stream error: ${evt.error?.type || "unknown"}`);
+        }
+        if (evt.type === "message_delta" && evt.delta?.stop_reason) {
+          stopReason = evt.delta.stop_reason;
         }
         if (evt.type === "message_stop") {
           messageStopReceived = true;
@@ -1805,6 +1809,9 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
   }
   if (!messageStopReceived && text.length === 0) {
     throw new Error("El stream se cerró sin contenido — posible timeout o sobrecarga del modelo.");
+  }
+  if (stopReason === "max_tokens") {
+    throw new Error("La respuesta excedió el límite de tokens para este tier. Intenta con una descripción de negocio más breve, o selecciona un tier superior (Mid-Size, Executive o Luxury) para mayor capacidad.");
   }
   return text;
 }
