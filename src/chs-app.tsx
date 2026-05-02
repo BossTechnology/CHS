@@ -2329,15 +2329,17 @@ export default function App() {
         setStreamPreview("⚡ Retrieved from cache");
       } else {
         // ── Cache MISS: call Anthropic ──────────────────────────────────
-        // Long Luxury-tier generations can run 90s+. Use a 5-minute
-        // AbortController so the browser doesn't kill the fetch as idle.
-        const genController = new AbortController();
-        const genTimeout = setTimeout(() => genController.abort(), 300000);
+        // Use AbortController only for the initial connection (60s).
+        // Once the stream starts flowing, we rely on keep-alive pings
+        // from the edge function and the natural stream lifecycle —
+        // aborting mid-stream would surface as 'BodyStreamBuffer was aborted'.
+        const connectController = new AbortController();
+        const connectTimeout = setTimeout(() => connectController.abort(), 60000);
         let res;
         try {
           res = await fetch("/api/anthropic", {
             method: "POST",
-            signal: genController.signal,
+            signal: connectController.signal,
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${sessionToken}`,
@@ -2351,17 +2353,19 @@ export default function App() {
             }),
           });
         } catch (err) {
-          clearTimeout(genTimeout);
-          if (err.name === "AbortError") throw new Error("La generación tardó más de 5 minutos. Intenta con un tier más bajo o un input más breve.");
+          clearTimeout(connectTimeout);
+          if (err.name === "AbortError") throw new Error("La conexión tardó más de 60 segundos en establecerse. Intenta de nuevo.");
           throw err;
         }
+        // Connection established — clear the connection timeout so it
+        // does NOT abort the long-running stream read below.
+        clearTimeout(connectTimeout);
         setStreamedChars(0);
         setStreamPreview("");
         const raw = await readAnthropicStream(res, (accumulated) => {
           setStreamedChars(accumulated.length);
           setStreamPreview(accumulated.slice(-120));
         });
-        clearTimeout(genTimeout);
         const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
         if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
         parsed = JSON.parse(raw.slice(f, l + 1));
