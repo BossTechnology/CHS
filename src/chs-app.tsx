@@ -1078,12 +1078,17 @@ function Page1({ onSubmit, lang, setLang, user, profile, onOpenAuth, onSignOut, 
 }
 
 // ─── LOADING ──────────────────────────────────────────────────────────────────
-function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview = "" }) {
+const TIER_EXPECTED_SECONDS = { compact: 30, midsize: 50, executive: 80, luxury: 120 };
+
+function LoadingScreen({ input, tierLabel, tierId, t, streamedChars = 0, streamPreview = "" }) {
   const { isMobile } = useResponsive();
   const [step, setStep] = useState(0);
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [displayed, setDisplayed] = useState("");
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const startedAtRef = useRef(Date.now());
   const streaming = streamedChars > 0;
+  const expectedSec = TIER_EXPECTED_SECONDS[tierId] || 60;
 
   useEffect(() => {
     // Advance steps until streaming starts, then jump to last step
@@ -1094,6 +1099,12 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
     const iv = setInterval(() => setStep(p => p < t.loadingSteps.length - 1 ? p + 1 : p), 900);
     return () => clearInterval(iv);
   }, [streaming, t.loadingSteps.length]);
+
+  // Tick elapsed time every 250ms — drives the time-based progress curve
+  useEffect(() => {
+    const iv = setInterval(() => setElapsedMs(Date.now() - startedAtRef.current), 250);
+    return () => clearInterval(iv);
+  }, []);
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -1113,10 +1124,19 @@ function LoadingScreen({ input, tierLabel, t, streamedChars = 0, streamPreview =
     return () => clearTimeout(tv);
   }, [displayed, phraseIdx, t.charmingPhrases]);
 
-  const STEP_MAX = 75;
-  const progress = streaming
-    ? Math.min(99, STEP_MAX + Math.floor(streamedChars / 200))
-    : Math.round((step / Math.max(t.loadingSteps.length - 1, 1)) * STEP_MAX);
+  // Time-based asymptotic progress: 1 - e^(-t/τ) where τ = expectedSec/3.
+  // Reaches ~95% at expectedSec, never crosses 99%, advances continuously
+  // whether or not stream chars arrive.
+  const elapsedSec = elapsedMs / 1000;
+  const tau = expectedSec / 3;
+  const timeProgress = 99 * (1 - Math.exp(-elapsedSec / tau));
+  // Stream chars also push progress forward — once we have ~half the expected
+  // output (assume ~3.5 chars/token, expected output ~tier.tokens * 0.5) we
+  // consider it >50% done. Take whichever is higher between time and stream.
+  const streamProgress = streaming
+    ? Math.min(99, (streamedChars / 30000) * 99)
+    : 0;
+  const progress = Math.round(Math.max(timeProgress, streamProgress));
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: isMobile ? "32px 16px" : "56px 20px" }}>
@@ -2583,7 +2603,7 @@ export default function App() {
       {OAuthErrorToast}
     </>
   );
-  if (screen === "loading") return <LoadingScreen input={userInput} tierLabel={selectedTier?.label} t={t} streamedChars={streamedChars} streamPreview={streamPreview} />;
+  if (screen === "loading") return <LoadingScreen input={userInput} tierLabel={selectedTier?.label} tierId={selectedTier?.id} t={t} streamedChars={streamedChars} streamPreview={streamPreview} />;
   if (screen === "error") return (
     <>
       <div style={{ minHeight:"100vh", background:"#fff", display:"flex", flexDirection:"column", fontFamily:"'Georgia',serif" }}>
