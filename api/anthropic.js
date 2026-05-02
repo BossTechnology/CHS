@@ -1,5 +1,8 @@
+// Node.js serverless runtime — Edge runtime is capped at 25–60s by Vercel
+// regardless of maxDuration, killing long Luxury-tier streams. Node serverless
+// honors maxDuration: 300 on Pro plans, which is required for 90s+ generations.
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
   maxDuration: 300,
 };
 import { checkRateLimit } from './_ratelimit.js'
