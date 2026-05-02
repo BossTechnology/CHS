@@ -1664,31 +1664,41 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
     const generate = async () => {
       setBpLoading(true);
       setBpError(null);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+      // Guard ONLY the initial connection (60s). Once the stream starts,
+      // we rely on the edge function's maxDuration + keep-alive pings —
+      // aborting mid-stream surfaces as 'BodyStreamBuffer was aborted'.
+      const connectController = new AbortController();
+      const connectTimeout = setTimeout(() => connectController.abort(), 60000);
       try {
         const { data: { session: bpSession } } = await supabase.auth.getSession();
-        const res = await fetch("/api/anthropic", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${bpSession?.access_token}`,
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            max_tokens: 8192,
-            system: buildBeyondProfitSystemBlocks(),
-            messages: [{ role: "user", content: buildBeyondProfitUserMessage(userInput, tier, lang, beyondProfitSelections) }],
-          }),
-        });
-        clearTimeout(timeout);
+        let res;
+        try {
+          res = await fetch("/api/anthropic", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${bpSession?.access_token}`,
+            },
+            signal: connectController.signal,
+            body: JSON.stringify({
+              max_tokens: 32000,
+              system: buildBeyondProfitSystemBlocks(),
+              messages: [{ role: "user", content: buildBeyondProfitUserMessage(userInput, tier, lang, beyondProfitSelections) }],
+            }),
+          });
+        } catch (err) {
+          clearTimeout(connectTimeout);
+          if (err.name === "AbortError") throw new Error("La conexión tardó más de 60 segundos en establecerse. Intenta de nuevo.");
+          throw err;
+        }
+        clearTimeout(connectTimeout);
         const raw = await readAnthropicStream(res);
         const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
         if (f === -1 || l === -1) throw new Error("No valid JSON in response.");
         const parsed = JSON.parse(raw.slice(f, l + 1));
         setBeyondProfitData(parsed);
       } catch (err) {
-        clearTimeout(timeout);
+        clearTimeout(connectTimeout);
         if (err.name === "AbortError") setBpError("Request timed out. Please try again.");
         else setBpError(err.message);
       } finally {
