@@ -2070,8 +2070,20 @@ async function readAnthropicStream(res, onChunk?: (accumulated: string) => void)
   if (stopReason === "max_tokens") {
     throw new Error("La respuesta excedió el límite de tokens para este tier. Intenta con una descripción de negocio más breve, o selecciona un tier superior (Mid-Size, Executive o Luxury) para mayor capacidad.");
   }
+  // If the stream closed without message_stop, only treat as truncation when
+  // the accumulated JSON is genuinely incomplete. Anthropic occasionally drops
+  // the message_stop event even when the body arrived in full — in those cases
+  // we want to proceed with the parsed text rather than fail the user.
   if (!messageStopReceived && text.length > 0) {
-    throw new Error("La respuesta fue cortada antes de completarse — posible timeout de red. Intenta de nuevo.");
+    const trimmed = text.trim();
+    const f = trimmed.indexOf("{"), l = trimmed.lastIndexOf("}");
+    let looksComplete = false;
+    if (f !== -1 && l !== -1 && l > f) {
+      try { JSON.parse(trimmed.slice(f, l + 1)); looksComplete = true; } catch { looksComplete = false; }
+    }
+    if (!looksComplete) {
+      throw new Error("La respuesta fue cortada antes de completarse — posible timeout de red. Intenta de nuevo.");
+    }
   }
   return text;
 }
