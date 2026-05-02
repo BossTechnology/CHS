@@ -1,4 +1,7 @@
-export const config = { runtime: 'edge' };
+export const config = {
+  runtime: 'edge',
+  maxDuration: 300,
+};
 import { checkRateLimit } from './_ratelimit.js'
 import { withNewRelic } from './_newrelic.js'
 
@@ -112,14 +115,44 @@ export default withNewRelic("anthropic", async function handler(req) {
       });
     }
 
-    // Pipe the SSE stream straight through to the client.
-    // The client accumulates text_delta events and parses JSON at the end.
-    return new Response(upstream.body, {
+    // Wrap the upstream stream so we can inject keep-alive pings every 15s.
+    // Without these, idle proxies (Vercel, Cloudflare) may close the connection
+    // mid-generation on long Luxury-tier responses, surfacing as truncated JSON.
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const keepAliveStream = new ReadableStream({
+      async start(controller) {
+        const reader = upstream.body.getReader();
+        let lastChunkAt = Date.now();
+        const pingInterval = setInterval(() => {
+          if (Date.now() - lastChunkAt >= 15000) {
+            try { controller.enqueue(encoder.encode(": keep-alive\n\n")); } catch {}
+            lastChunkAt = Date.now();
+          }
+        }, 5000);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            lastChunkAt = Date.now();
+            controller.enqueue(value);
+          }
+        } catch (err) {
+          try { controller.enqueue(encoder.encode(`event: error\ndata: ${JSON.stringify({ type: "error", error: { message: err.message } })}\n\n`)); } catch {}
+        } finally {
+          clearInterval(pingInterval);
+          try { controller.close(); } catch {}
+        }
+      },
+    });
+
+    return new Response(keepAliveStream, {
       status: 200,
       headers: {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
+        "Connection": "keep-alive",
         ...corsHeaders(origin),
       },
     });

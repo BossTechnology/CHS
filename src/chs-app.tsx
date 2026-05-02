@@ -2329,26 +2329,39 @@ export default function App() {
         setStreamPreview("⚡ Retrieved from cache");
       } else {
         // ── Cache MISS: call Anthropic ──────────────────────────────────
-        const res = await fetch("/api/anthropic", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${sessionToken}`,
-          },
-          body: JSON.stringify({
-            max_tokens: tier.tokens,
-            system: buildChassisSystemBlocks(),
-            messages: [{ role: "user", content: existingChassis
-              ? buildReFabricateUserMessage(input, input, tier, currentLang, bpSelections, existingChassis)
-              : buildChassisUserMessage(input, tier, currentLang) }],
-          }),
-        });
+        // Long Luxury-tier generations can run 90s+. Use a 5-minute
+        // AbortController so the browser doesn't kill the fetch as idle.
+        const genController = new AbortController();
+        const genTimeout = setTimeout(() => genController.abort(), 300000);
+        let res;
+        try {
+          res = await fetch("/api/anthropic", {
+            method: "POST",
+            signal: genController.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${sessionToken}`,
+            },
+            body: JSON.stringify({
+              max_tokens: tier.tokens,
+              system: buildChassisSystemBlocks(),
+              messages: [{ role: "user", content: existingChassis
+                ? buildReFabricateUserMessage(input, input, tier, currentLang, bpSelections, existingChassis)
+                : buildChassisUserMessage(input, tier, currentLang) }],
+            }),
+          });
+        } catch (err) {
+          clearTimeout(genTimeout);
+          if (err.name === "AbortError") throw new Error("La generación tardó más de 5 minutos. Intenta con un tier más bajo o un input más breve.");
+          throw err;
+        }
         setStreamedChars(0);
         setStreamPreview("");
         const raw = await readAnthropicStream(res, (accumulated) => {
           setStreamedChars(accumulated.length);
           setStreamPreview(accumulated.slice(-120));
         });
+        clearTimeout(genTimeout);
         const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
         if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
         parsed = JSON.parse(raw.slice(f, l + 1));
