@@ -162,8 +162,10 @@ export default async function handler(req, res) {
     if (typeof res.flushHeaders === "function") res.flushHeaders();
 
     const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
     let lastChunkAt = Date.now();
     let aborted = false;
+    let messageStopSeen = false;
     const onClientClose = () => { aborted = true; try { reader.cancel(); } catch {} };
     req.on("close", onClientClose);
 
@@ -179,11 +181,21 @@ export default async function handler(req, res) {
     if (typeof pingInterval.unref === "function") pingInterval.unref();
 
     try {
+      // Anthropic ends the stream with `event: message_stop`, but the underlying
+      // TCP connection stays open due to HTTP keep-alive — reader.read() would
+      // block forever waiting for the next chunk that never arrives, hitting
+      // maxDuration. Detect message_stop in the bytes and break manually.
+      let tail = "";
       while (!aborted) {
         const { done, value } = await reader.read();
         if (done) break;
         lastChunkAt = Date.now();
         res.write(Buffer.from(value));
+        tail = (tail + decoder.decode(value, { stream: true })).slice(-512);
+        if (tail.includes('"type":"message_stop"') || tail.includes("event: message_stop")) {
+          messageStopSeen = true;
+          break;
+        }
       }
     } catch (err) {
       try { res.write(`event: error\ndata: ${JSON.stringify({ type: "error", error: { message: err.message } })}\n\n`); } catch {}
