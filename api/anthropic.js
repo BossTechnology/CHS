@@ -164,8 +164,11 @@ export default async function handler(req, res) {
     const reader = upstream.body.getReader();
     let lastChunkAt = Date.now();
     let aborted = false;
-    req.on("close", () => { aborted = true; try { reader.cancel(); } catch {} });
+    const onClientClose = () => { aborted = true; try { reader.cancel(); } catch {} };
+    req.on("close", onClientClose);
 
+    // .unref() so the interval never blocks the Node event loop from exiting
+    // even if clearInterval somehow gets skipped on an abrupt error path.
     const pingInterval = setInterval(() => {
       if (aborted) return;
       if (Date.now() - lastChunkAt >= 15000) {
@@ -173,6 +176,7 @@ export default async function handler(req, res) {
         lastChunkAt = Date.now();
       }
     }, 5000);
+    if (typeof pingInterval.unref === "function") pingInterval.unref();
 
     try {
       while (!aborted) {
@@ -184,7 +188,13 @@ export default async function handler(req, res) {
     } catch (err) {
       try { res.write(`event: error\ndata: ${JSON.stringify({ type: "error", error: { message: err.message } })}\n\n`); } catch {}
     } finally {
+      // Aggressive cleanup so the Lambda exits as soon as the response is sent.
+      // Without these, dangling resources (open reader, registered close listener)
+      // can keep the function alive until maxDuration cap (300s) and inflate cost.
       clearInterval(pingInterval);
+      try { req.off("close", onClientClose); } catch {}
+      try { reader.releaseLock(); } catch {}
+      try { await upstream.body.cancel(); } catch {}
       try { res.end(); } catch {}
     }
   } catch (err) {
