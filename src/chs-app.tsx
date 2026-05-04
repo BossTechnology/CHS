@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { jsonrepair } from "jsonrepair";
 import supabase from "./lib/supabase";
 import { useResponsive } from "./hooks/useResponsive";
 import { LANGUAGES, detectLanguage, T, TIER_CONFIG, getTiers } from "./i18n/translations.js";
@@ -1713,9 +1714,7 @@ function Page2({ chassisData, tier, lang, setLang, beyondProfitSelections, beyon
         }
         clearTimeout(connectTimeout);
         const raw = await readAnthropicStream(res);
-        const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
-        if (f === -1 || l === -1) throw new Error("No valid JSON in response.");
-        const parsed = JSON.parse(raw.slice(f, l + 1));
+        const parsed = parseJSONSafe(raw);
         setBeyondProfitData(parsed);
       } catch (err) {
         clearTimeout(connectTimeout);
@@ -2052,6 +2051,18 @@ ${(beyondProfitSelections && beyondProfitSelections.length > 0 && beyondProfitDa
 
 // ─── SSE STREAM READER ────────────────────────────────────────────────────────
 // Module-level so both App (main generation) and Page2 (Beyond Profit) can use it.
+function parseJSONSafe(text: string): any {
+  const trimmed = text.trim();
+  const f = trimmed.indexOf("{");
+  const l = trimmed.lastIndexOf("}");
+  if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
+  try {
+    return JSON.parse(trimmed.slice(f, l + 1));
+  } catch {
+    return JSON.parse(jsonrepair(trimmed.slice(f)));
+  }
+}
+
 async function readAnthropicStream(res, onChunk?: (accumulated: string) => void) {
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -2408,9 +2419,7 @@ export default function App() {
           setStreamedChars(accumulated.length);
           setStreamPreview(accumulated.slice(-120));
         });
-        const f = raw.indexOf("{"), l = raw.lastIndexOf("}");
-        if (f === -1 || l === -1) throw new Error("No valid JSON found in response.");
-        parsed = JSON.parse(raw.slice(f, l + 1));
+        parsed = parseJSONSafe(raw);
 
         // Store in cache for future hits (fire-and-forget, non-blocking)
         storeCache(input, tier.id, currentLang, parsed).catch(() => {});
