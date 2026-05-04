@@ -14,7 +14,7 @@
     }
   ],
   "functions": {
-    "api/anthropic.js":       { "maxDuration": 300 },
+    "api/anthropic.js":       { "maxDuration": 800 },
     "api/create-purchase.js": { "maxDuration": 15 },
     "api/stripe-webhook.js":  { "maxDuration": 15 },
     "api/validate-promo.js":  { "maxDuration": 10 },
